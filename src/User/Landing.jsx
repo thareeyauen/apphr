@@ -10,12 +10,18 @@ import {
   MdPerson,
   MdPieChart,
   MdNavigateBefore,
-  MdNavigateNext
+  MdNavigateNext,
+  MdBusiness,
+  MdWorkOutline,
+  MdClose
 } from 'react-icons/md';
 import './Landing.css';
 
 export default function Landing() {
   const [activeTab, setActiveTab] = useState('calendar');
+  const [showCheckInPopup, setShowCheckInPopup] = useState(false);
+  const [selectedCheckInLocation, setSelectedCheckInLocation] = useState('');
+  const [offsiteAddress, setOffsiteAddress] = useState('');
 
   // Mock user data
   const user = {
@@ -33,7 +39,14 @@ export default function Landing() {
   const stats = [
     { icon: <MdAccessTime />, label: 'Not yet check in', value: '0 Days', color: 'orange' },
     { icon: <MdEventBusy />, label: 'Absent', value: '0 day', color: 'red' },
-    { icon: <MdLocalHospital />, label: 'Sick Leave', value: '0 hr 0 min', color: 'blue' }
+    { icon: <MdLocalHospital />, label: 'Sick Leave', value: '0 day', color: 'blue' }
+  ];
+
+  const checkInLocations = [
+    { icon: <MdBusiness />, name: 'HAND SE Thonglor', detail: 'Office' },
+    { icon: <MdBusiness />, name: 'KRAC CU', detail: 'Office' },
+    { icon: <MdHome />, name: 'WFH', detail: 'Work from home' },
+    { icon: <MdWorkOutline />, name: 'Offsite', detail: 'Set address' }
   ];
 
   // Calendar data for April 2026
@@ -114,7 +127,7 @@ export default function Landing() {
           onClick={() => setActiveTab('announcements')}
         >
           Announcements
-          <span className="badge">9</span>
+          <span className="badge">1</span>
         </button>
       </div>
 
@@ -196,7 +209,7 @@ export default function Landing() {
           <span className="nav-icon"><MdAccessTime /></span>
           <span className="nav-label">Time Record</span>
         </button>
-        <button className="nav-item center">
+        <button className="nav-item center" onClick={() => setShowCheckInPopup(true)} aria-label="Open check in">
           <span className="nav-icon large"><MdSchedule /></span>
         </button>
         <button className="nav-item">
@@ -208,6 +221,52 @@ export default function Landing() {
           <span className="nav-label">My Account</span>
         </button>
       </div>
+
+      {showCheckInPopup && (
+        <div className="checkin-overlay" onClick={() => setShowCheckInPopup(false)}>
+          <div className="checkin-popup" onClick={(event) => event.stopPropagation()}>
+            <div className="checkin-header">
+              <h3>WHERE ARE YOU WORKING?</h3>
+              <button className="checkin-close" onClick={() => setShowCheckInPopup(false)} aria-label="Close check in">
+                <MdClose />
+              </button>
+            </div>
+            <div className="checkin-options">
+              {checkInLocations.map((location) => (
+                <button
+                  key={location.name}
+                  className={`checkin-option ${selectedCheckInLocation === location.name ? 'selected' : ''}`}
+                  onClick={() => setSelectedCheckInLocation(location.name)}
+                >
+                  <span className="checkin-option-icon">{location.icon}</span>
+                  <span className="checkin-option-text">
+                    <strong>{location.name}</strong>
+                    <small>{location.detail}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+            {selectedCheckInLocation === 'Offsite' && (
+              <label className="offsite-field">
+                <span>Offsite location</span>
+                <textarea
+                  value={offsiteAddress}
+                  onChange={(event) => setOffsiteAddress(event.target.value)}
+                  placeholder="ระบุสถานที่"
+                  rows="3"
+                />
+              </label>
+            )}
+            <button
+              className="checkin-submit"
+              disabled={!selectedCheckInLocation || (selectedCheckInLocation === 'Offsite' && !offsiteAddress.trim())}
+              onClick={() => setShowCheckInPopup(false)}
+            >
+              Submit
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
