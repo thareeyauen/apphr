@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   MdAccessTime,
   MdEventBusy,
@@ -16,26 +16,77 @@ import {
   MdClose
 } from 'react-icons/md';
 import './Landing.css';
+import Account from './Account';
+import Record from './Record';
 
-export default function Landing() {
+const CHECK_IN_RECORDS_KEY = 'apphr-checkin-records';
+const today = new Date();
+
+const getDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getCalendarDays = (calendarDate) => {
+  const year = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+  const firstDayOfMonth = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const visibleCells = Math.ceil((firstDayOfMonth.getDay() + daysInMonth) / 7) * 7;
+
+  return Array.from({ length: visibleCells }, (_, index) => {
+    const dayOffset = index - firstDayOfMonth.getDay() + 1;
+    const date = new Date(year, month, dayOffset);
+
+    return {
+      date,
+      dateKey: getDateKey(date),
+      dayNumber: date.getDate(),
+      isCurrentMonth: date.getMonth() === month
+    };
+  });
+};
+
+export default function Landing({ onGoRecord, onGoAccount }) {
   const [activeTab, setActiveTab] = useState('calendar');
+  const [activePage, setActivePage] = useState('home');
+  const [calendarDate, setCalendarDate] = useState(
+    () => new Date(today.getFullYear(), today.getMonth(), 1)
+  );
   const [showCheckInPopup, setShowCheckInPopup] = useState(false);
   const [selectedCheckInLocation, setSelectedCheckInLocation] = useState('');
   const [offsiteAddress, setOffsiteAddress] = useState('');
+  const [checkInRecords, setCheckInRecords] = useState(() => {
+    const savedRecords = localStorage.getItem(CHECK_IN_RECORDS_KEY);
+    return savedRecords ? JSON.parse(savedRecords) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(CHECK_IN_RECORDS_KEY, JSON.stringify(checkInRecords));
+  }, [checkInRecords]);
 
   // Mock user data
   const user = {
     name: 'Thareeya Uentrakul',
-    date: 'Mon 27 Apr 2026',
+    position: 'Project Coordinator',
+    employeeId: 'HAND23',
+    company: 'บริษัท แฮนด์ วิสาหกิจเพื่อสังคม จำกัด',
+    language: 'English',
     leaveQuota: '5 days'
   };
+  const userDate = today.toLocaleDateString('en-US', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
 
   const userInitials = user.name
     .split(' ')
     .map((namePart) => namePart[0])
     .join('');
-  const hasCheckedIn = false;
-
   const stats = [
     { icon: <MdAccessTime />, label: 'Not yet check in', value: '0 Days', color: 'orange' },
     { icon: <MdEventBusy />, label: 'Absent', value: '0 day', color: 'red' },
@@ -49,29 +100,105 @@ export default function Landing() {
     { icon: <MdWorkOutline />, name: 'Offsite', detail: 'Set address' }
   ];
 
-  // Calendar data for April 2026
-  const calendarDays = [
-    29, 30, 31, 1, 2, 3, 4,
-    5, 6, 7, 8, 9, 10, 11,
-    12, 13, 14, 15, 16, 17, 18,
-    19, 20, 21, 22, 23, 24, 25,
-    26, 27, 28, 29, 30, 1, 2,
-    3, 4, 5, 6, 7, 8, 9
-  ];
+  const calendarDays = getCalendarDays(calendarDate);
+  const todayKey = getDateKey(today);
+  const checkInDateKeys = new Set(
+    checkInRecords.map((record) => record.dateKey).filter(Boolean)
+  );
+  const calendarTitle = calendarDate.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric'
+  });
 
-  // Mark specific days with colors (mock data)
-  const dayMarks = {
-    1: 'ontime', 2: 'ontime', 3: 'ontime',
-    5: 'holiday', 6: 'holiday', 7: 'ontime', 8: 'ontime', 9: 'ontime', 10: 'absent', 11: 'holiday',
-    12: 'holiday', 13: 'holiday', 14: 'holiday', 15: 'holiday', 16: 'absent', 17: 'absent',
-    19: 'holiday', 20: 'ontime', 21: 'ontime', 22: 'ontime', 23: 'ontime', 24: 'absent',
-    27: 'today'
+  const getDayMark = (calendarDay) => {
+    if (!calendarDay.isCurrentMonth) return '';
+    if (calendarDay.dateKey === todayKey) return 'today';
+    if (checkInDateKeys.has(calendarDay.dateKey)) return 'late';
+    if (calendarDay.date.getDay() === 0 || calendarDay.date.getDay() === 6) return 'holiday';
+    return '';
   };
 
-  const getDayClass = (day) => {
-    if (day < 5 || day > 26) return 'other-month';
-    return dayMarks[day] || 'no-mark';
+  const getDayClass = (calendarDay) => {
+    const dayMark = getDayMark(calendarDay);
+    const monthClass = calendarDay.isCurrentMonth ? '' : 'other-month';
+    return `${monthClass} ${dayMark || 'no-mark'}`.trim();
   };
+
+  const goToPreviousMonth = () => {
+    setCalendarDate(
+      (currentDate) => new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    );
+  };
+
+  const goToNextMonth = () => {
+    setCalendarDate(
+      (currentDate) => new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
+    );
+  };
+
+  const handleSubmitCheckIn = () => {
+    const checkedInAt = new Date();
+    const location =
+      selectedCheckInLocation === 'Offsite'
+        ? offsiteAddress.trim()
+        : selectedCheckInLocation;
+
+    setCheckInRecords((currentRecords) => [
+      {
+        id: checkedInAt.toISOString(),
+        dateKey: getDateKey(checkedInAt),
+        date: checkedInAt.toLocaleDateString('th-TH', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        }),
+        time: checkedInAt.toLocaleTimeString('th-TH', {
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        location
+      },
+      ...currentRecords
+    ]);
+    setSelectedCheckInLocation('');
+    setOffsiteAddress('');
+    setShowCheckInPopup(false);
+  };
+
+  const handleDeleteCheckInRecord = (recordId) => {
+    setCheckInRecords((currentRecords) =>
+      currentRecords.filter((record) => record.id !== recordId)
+    );
+  };
+
+  if (activePage === 'record') {
+    return (
+      <Record
+        records={checkInRecords}
+        onDeleteRecord={handleDeleteCheckInRecord}
+        onGoHome={() => setActivePage('home')}
+        onGoAccount={onGoAccount || (() => setActivePage('account'))}
+        onOpenCheckIn={() => {
+          setActivePage('home');
+          setShowCheckInPopup(true);
+        }}
+      />
+    );
+  }
+
+  if (activePage === 'account') {
+    return (
+      <Account
+        user={user}
+        onGoHome={() => setActivePage('home')}
+        onGoRecord={onGoRecord || (() => setActivePage('record'))}
+        onOpenCheckIn={() => {
+          setActivePage('home');
+          setShowCheckInPopup(true);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="landing-container">
@@ -85,7 +212,7 @@ export default function Landing() {
             <div className="user-details">
               <h2>Good Morning!</h2>
               <p className="user-name">{user.name}</p>
-              <p className="user-date"><MdDateRange /> {user.date}</p>
+              <p className="user-date"><MdDateRange /> {userDate}</p>
             </div>
           </div>
           <button className="leave-quota-btn">
@@ -135,9 +262,13 @@ export default function Landing() {
       {activeTab === 'calendar' && (
         <div className="calendar-section">
           <div className="calendar-header">
-            <button className="nav-arrow"><MdNavigateBefore /></button>
-            <h3>April 2026</h3>
-            <button className="nav-arrow"><MdNavigateNext /></button>
+            <button className="nav-arrow" onClick={goToPreviousMonth} aria-label="Previous month">
+              <MdNavigateBefore />
+            </button>
+            <h3>{calendarTitle}</h3>
+            <button className="nav-arrow" onClick={goToNextMonth} aria-label="Next month">
+              <MdNavigateNext />
+            </button>
           </div>
 
           <div className="calendar-grid">
@@ -148,10 +279,10 @@ export default function Landing() {
             </div>
 
             <div className="days">
-              {calendarDays.map((day, index) => (
-                <div key={index} className={`day ${getDayClass(day)}`}>
-                  <span className="day-number">{day}</span>
-                  <div className={`day-mark ${dayMarks[day] || ''}`}></div>
+              {calendarDays.map((calendarDay) => (
+                <div key={calendarDay.dateKey} className={`day ${getDayClass(calendarDay)}`}>
+                  <span className="day-number">{calendarDay.dayNumber}</span>
+                  <div className={`day-mark ${getDayMark(calendarDay)}`}></div>
                 </div>
               ))}
             </div>
@@ -163,20 +294,12 @@ export default function Landing() {
               <span>Holiday</span>
             </div>
             <div className="legend-item">
-              <div className="legend-dot shift"></div>
-              <span>Shift</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-dot ontime"></div>
-              <span>Ontime</span>
+              <div className="legend-dot checkined"></div>
+              <span>Check In</span>
             </div>
             <div className="legend-item">
               <div className="legend-dot absent"></div>
               <span>Absent</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-dot late"></div>
-              <span>Check in</span>
             </div>
             <div className="legend-item">
               <div className="legend-dot request"></div>
@@ -205,9 +328,9 @@ export default function Landing() {
           <span className="nav-label">Home</span>
           <span className="nav-badge">9</span>
         </button>
-        <button className="nav-item">
+        <button className="nav-item" onClick={onGoRecord || (() => setActivePage('record'))}>
           <span className="nav-icon"><MdAccessTime /></span>
-          <span className="nav-label">Time Record</span>
+          <span className="nav-label">Record</span>
         </button>
         <button className="nav-item center" onClick={() => setShowCheckInPopup(true)} aria-label="Open check in">
           <span className="nav-icon large"><MdSchedule /></span>
@@ -216,7 +339,7 @@ export default function Landing() {
           <span className="nav-icon"><MdAssignment /></span>
           <span className="nav-label">Requests</span>
         </button>
-        <button className="nav-item">
+        <button className="nav-item" onClick={onGoAccount || (() => setActivePage('account'))}>
           <span className="nav-icon"><MdPerson /></span>
           <span className="nav-label">My Account</span>
         </button>
@@ -260,7 +383,7 @@ export default function Landing() {
             <button
               className="checkin-submit"
               disabled={!selectedCheckInLocation || (selectedCheckInLocation === 'Offsite' && !offsiteAddress.trim())}
-              onClick={() => setShowCheckInPopup(false)}
+              onClick={handleSubmitCheckIn}
             >
               Submit
             </button>

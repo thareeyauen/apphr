@@ -52,6 +52,11 @@
 
 body {
   margin: 0;
+  background: #000000;
+}
+
+html {
+  background: #000000;
 }
 
 #root {
@@ -59,12 +64,32 @@ body {
   max-width: 100%;
   margin: 0 auto;
   text-align: center;
+  background: #000000;
   border-inline: none;
   box-shadow: 0 0 36px rgba(15, 23, 42, 0.16);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+}
+
+body.login-route {
+  background: #ffffff;
+}
+
+body.login-route,
+body.login-route #root {
+  background: #ffffff;
+}
+
+body.login-route #root {
+  width: 100%;
+  box-shadow: none;
+}
+
+body.full-width-route #root {
+  width: 100%;
+  box-shadow: none;
 }
 
 h1,
