@@ -95,7 +95,7 @@ export default function Landing({ onGoRecord, onGoAccount }) {
 
   const checkInLocations = [
     { icon: <MdBusiness />, name: 'HAND SE Thonglor', detail: 'Office' },
-    { icon: <MdBusiness />, name: 'KRAC CU', detail: 'Office' },
+    { icon: <MdBusiness />, name: 'KRAC Chulalongkorn University', detail: 'Office' },
     { icon: <MdHome />, name: 'WFH', detail: 'Work from home' },
     { icon: <MdWorkOutline />, name: 'Offsite', detail: 'Set address' }
   ];
@@ -210,7 +210,7 @@ export default function Landing({ onGoRecord, onGoAccount }) {
               {userInitials}
             </div>
             <div className="user-details">
-              <h2>Good Morning!</h2>
+              <h2>Welcome!</h2>
               <p className="user-name">{user.name}</p>
               <p className="user-date"><MdDateRange /> {userDate}</p>
             </div>
