@@ -35,7 +35,7 @@ function App() {
 
   useEffect(() => {
     document.body.classList.toggle('login-route', path === '/login')
-    document.body.classList.toggle('full-width-route', ['/', '/home', '/record'].includes(path))
+    document.body.classList.toggle('full-width-route', ['/', '/home', '/record', '/account'].includes(path))
 
     return () => {
       document.body.classList.remove('login-route')

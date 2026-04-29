@@ -89,7 +89,12 @@ body.login-route #root {
 
 body.full-width-route #root {
   width: 100%;
+  background: #ffffff;
   box-shadow: none;
+}
+
+body.full-width-route {
+  background: #ffffff;
 }
 
 h1,
