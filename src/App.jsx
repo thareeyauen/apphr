@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import Account from './User/Account'
 import Landing from './User/Landing'
+import Leave from './User/Leave'
 import Login from './User/Login'
+import Overtime from './User/Overtime'
+import Outside from './User/Oueside'
 import Record from './User/Record'
+import Request from './User/Request'
 
 const CHECK_IN_RECORDS_KEY = 'apphr-checkin-records'
 
@@ -35,7 +39,7 @@ function App() {
 
   useEffect(() => {
     document.body.classList.toggle('login-route', path === '/login')
-    document.body.classList.toggle('full-width-route', ['/', '/home', '/record', '/account'].includes(path))
+    document.body.classList.toggle('full-width-route', ['/', '/home', '/record', '/account', '/request', '/leave', '/overtime', '/outside'].includes(path))
 
     return () => {
       document.body.classList.remove('login-route')
@@ -70,6 +74,62 @@ function App() {
         onDeleteRecord={deleteCheckInRecord}
         onGoHome={() => navigate('/home')}
         onGoAccount={() => navigate('/account')}
+        onGoRequest={() => navigate('/request')}
+        onOpenCheckIn={() => navigate('/home')}
+      />
+    )
+  }
+
+  if (path === '/request') {
+    return (
+      <Request
+        onCreateNew={(requestType) => {
+          if (requestType === 'leave') navigate('/leave')
+          if (requestType === 'overtime') navigate('/overtime')
+          if (requestType === 'work-outsides') navigate('/outside')
+        }}
+        onGoHome={() => navigate('/home')}
+        onGoRecord={() => navigate('/record')}
+        onGoAccount={() => navigate('/account')}
+        onOpenCheckIn={() => navigate('/home')}
+      />
+    )
+  }
+
+  if (path === '/leave') {
+    return (
+      <Leave
+        onGoBack={() => navigate('/request')}
+        onGoHome={() => navigate('/home')}
+        onGoRecord={() => navigate('/record')}
+        onGoRequest={() => navigate('/request')}
+        onGoAccount={() => navigate('/account')}
+        onOpenCheckIn={() => navigate('/home')}
+      />
+    )
+  }
+
+  if (path === '/overtime') {
+    return (
+      <Overtime
+        onGoBack={() => navigate('/request')}
+        onGoHome={() => navigate('/home')}
+        onGoRecord={() => navigate('/record')}
+        onGoRequest={() => navigate('/request')}
+        onGoAccount={() => navigate('/account')}
+        onOpenCheckIn={() => navigate('/home')}
+      />
+    )
+  }
+
+  if (path === '/outside') {
+    return (
+      <Outside
+        onGoBack={() => navigate('/request')}
+        onGoHome={() => navigate('/home')}
+        onGoRecord={() => navigate('/record')}
+        onGoRequest={() => navigate('/request')}
+        onGoAccount={() => navigate('/account')}
         onOpenCheckIn={() => navigate('/home')}
       />
     )
@@ -81,6 +141,7 @@ function App() {
         user={mockUser}
         onGoHome={() => navigate('/home')}
         onGoRecord={() => navigate('/record')}
+        onGoRequest={() => navigate('/request')}
         onOpenCheckIn={() => navigate('/home')}
       />
     )
@@ -89,6 +150,7 @@ function App() {
   return (
     <Landing
       onGoRecord={() => navigate('/record')}
+      onGoRequest={() => navigate('/request')}
       onGoAccount={() => navigate('/account')}
     />
   )

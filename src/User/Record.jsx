@@ -10,7 +10,14 @@ import {
 } from 'react-icons/md';
 import './Record.css';
 
-export default function Record({ records, onDeleteRecord, onGoHome, onGoAccount, onOpenCheckIn }) {
+export default function Record({
+  records,
+  onDeleteRecord,
+  onGoHome,
+  onGoRequest,
+  onGoAccount,
+  onOpenCheckIn
+}) {
   return (
     <div className="record-container">
       <div className="record-header">
@@ -69,7 +76,7 @@ export default function Record({ records, onDeleteRecord, onGoHome, onGoAccount,
         <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
           <span className="nav-icon large"><MdSchedule /></span>
         </button>
-        <button className="nav-item">
+        <button className="nav-item" onClick={onGoRequest}>
           <span className="nav-icon"><MdAssignment /></span>
           <span className="nav-label">Requests</span>
         </button>

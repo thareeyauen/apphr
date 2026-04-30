@@ -18,6 +18,7 @@ import {
 import './Landing.css';
 import Account from './Account';
 import Record from './Record';
+import Request from './Request';
 
 const CHECK_IN_RECORDS_KEY = 'apphr-checkin-records';
 const today = new Date();
@@ -49,7 +50,7 @@ const getCalendarDays = (calendarDate) => {
   });
 };
 
-export default function Landing({ onGoRecord, onGoAccount }) {
+export default function Landing({ onGoRecord, onGoRequest, onGoAccount }) {
   const [activeTab, setActiveTab] = useState('calendar');
   const [activePage, setActivePage] = useState('home');
   const [calendarDate, setCalendarDate] = useState(
@@ -192,6 +193,36 @@ export default function Landing({ onGoRecord, onGoAccount }) {
         user={user}
         onGoHome={() => setActivePage('home')}
         onGoRecord={onGoRecord || (() => setActivePage('record'))}
+        onGoRequest={onGoRequest || (() => setActivePage('request'))}
+        onOpenCheckIn={() => {
+          setActivePage('home');
+          setShowCheckInPopup(true);
+        }}
+      />
+    );
+  }
+
+  if (activePage === 'request') {
+    return (
+      <Request
+        onCreateNew={(requestType) => {
+          if (requestType === 'leave') {
+            // Keep local fallback navigation working when Landing owns the page state.
+            window.history.pushState({}, '', '/leave');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+          }
+          if (requestType === 'overtime') {
+            window.history.pushState({}, '', '/overtime');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+          }
+          if (requestType === 'work-outsides') {
+            window.history.pushState({}, '', '/outside');
+            window.dispatchEvent(new PopStateEvent('popstate'));
+          }
+        }}
+        onGoHome={() => setActivePage('home')}
+        onGoRecord={onGoRecord || (() => setActivePage('record'))}
+        onGoAccount={onGoAccount || (() => setActivePage('account'))}
         onOpenCheckIn={() => {
           setActivePage('home');
           setShowCheckInPopup(true);
@@ -335,7 +366,7 @@ export default function Landing({ onGoRecord, onGoAccount }) {
         <button className="nav-item center" onClick={() => setShowCheckInPopup(true)} aria-label="Open check in">
           <span className="nav-icon large"><MdSchedule /></span>
         </button>
-        <button className="nav-item">
+        <button className="nav-item" onClick={onGoRequest || (() => setActivePage('request'))}>
           <span className="nav-icon"><MdAssignment /></span>
           <span className="nav-label">Requests</span>
         </button>

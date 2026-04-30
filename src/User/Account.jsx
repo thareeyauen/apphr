@@ -36,7 +36,7 @@ const BENEFIT_ICONS = {
 const DEFAULT_PROFILE = {
   user: {
     initial: 'TU',
-    nameTh: 'ธารียา อึ๊งตระกูล',
+    nameTh: 'ธรีญา อึ้งตระกูล',
     nameEn: 'Thareeya Uentrakul',
     nicknameTh: 'แทร',
     gender: 'หญิง',
@@ -48,7 +48,7 @@ const DEFAULT_PROFILE = {
     line: 'thareeya.u',
     addressCard: '123/45 ถนนพระราม 4 แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110',
     addressNow: '99/8 อาคาร XYZ ชั้น 4 ซอยทองหล่อ 10 แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110',
-    emergency: { name: 'คุณแม่ — สมใจ อึ๊งตระกูล', phone: '089-876-5432' },
+    emergency: { name: 'คุณแม่ — สมใจ อึ้งตระกูล', phone: '089-876-5432' },
     education: [
       { uni: 'จุฬาลงกรณ์มหาวิทยาลัย', faculty: 'คณะรัฐศาสตร์', degree: 'ปริญญาตรี', year: '2562' }
     ]
@@ -65,7 +65,7 @@ const DEFAULT_PROFILE = {
       name: 'ธนาคารกสิกรไทย',
       branch: 'สาขาทองหล่อ',
       acc: '123-4-56789-0',
-      accName: 'ธารียา อึ๊งตระกูล'
+      accName: 'ธรีญา อึ้งตระกูล'
     },
     history: [
       { date: '01 เม.ย. 2567', from: 'Project Assistant', to: 'Project Coordinator', kind: 'เลื่อนตำแหน่ง', salary: '+15%' },
@@ -275,6 +275,7 @@ export default function Account({
   user,
   onGoHome,
   onGoRecord,
+  onGoRequest,
   onOpenCheckIn,
   onMessage,
   initialTab = 'general'
@@ -360,7 +361,7 @@ export default function Account({
         <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
           <span className="nav-icon large"><MdSchedule /></span>
         </button>
-        <button className="nav-item">
+        <button className="nav-item" onClick={onGoRequest}>
           <span className="nav-icon"><MdAssignment /></span>
           <span className="nav-label">Requests</span>
         </button>
