@@ -185,12 +185,15 @@ function App() {
   const createRequestRecord = (request) => {
     const createdAt = new Date()
     const ownerKey = getUserRecordOwnerKey(currentUser)
+    const startDateKey = typeof request?.startDateKey === 'string' ? request.startDateKey : null
+    const effectiveDateKey = startDateKey || getDateKey(createdAt)
+    const effectiveDate = startDateKey
+      ? formatRequestDate(new Date(`${startDateKey}T00:00:00`))
+      : formatRequestDate(createdAt)
 
     setRequestRecords((currentRequests) => [
       {
         id: `REQ-${String(createdAt.getTime()).slice(-6)}`,
-        date: formatRequestDate(createdAt),
-        dateKey: getDateKey(createdAt),
         approver: 'คุณวิชัย ส.',
         status: 'pending',
         ownerKey,
@@ -198,7 +201,9 @@ function App() {
         email: currentUser.email,
         userId: currentUser.userType,
         userName: currentUser.name,
-        ...request
+        ...request,
+        date: effectiveDate,
+        dateKey: effectiveDateKey
       },
       ...currentRequests
     ])

@@ -79,9 +79,16 @@ export default function Leave({
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!canSubmit) return;
+    const timeLabel =
+      selectedDayType.id === 'period'
+        ? `${periodStart}-${periodEnd}`
+        : selectedDayType.label;
     onSubmitRequest?.({
       type: selectedLeave.label,
-      detail: `${formatInputDate(startDate)} - ${formatInputDate(endDate)} (${requestedDays} วัน) · ${selectedDayType.label} · ${reason.trim()}`
+      detail: `${formatInputDate(startDate)} - ${formatInputDate(endDate)} (${requestedDays} วัน) · ${selectedDayType.label} · ${reason.trim()}`,
+      startDateKey: startDate,
+      endDateKey: endDate,
+      time: timeLabel
     });
     onGoRequest?.();
   };

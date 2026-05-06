@@ -22,12 +22,6 @@ const CHECK_IN_RECORDS_KEY = 'apphr-checkin-records';
 const DEMO_SEED_KEY = 'apphr-demo-seeded';
 const today = new Date();
 
-const REQUEST_STATUS_LABEL = {
-  pending: 'รออนุมัติ',
-  approved: 'อนุมัติ',
-  rejected: 'ไม่อนุมัติ'
-};
-
 const getDateKey = (date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -197,11 +191,32 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
       [record.dateKey]: [...(recordsByDate[record.dateKey] || []), record]
     };
   }, {});
+  const expandRequestDateKeys = (request) => {
+    const startKey = request.startDateKey || request.dateKey;
+    const endKey = request.endDateKey || startKey;
+    if (!startKey) return [];
+    const start = new Date(`${startKey}T00:00:00`);
+    const end = new Date(`${endKey}T00:00:00`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
+      return [startKey];
+    }
+    const keys = [];
+    const cursor = new Date(start);
+    while (cursor <= end) {
+      const y = cursor.getFullYear();
+      const m = String(cursor.getMonth() + 1).padStart(2, '0');
+      const d = String(cursor.getDate()).padStart(2, '0');
+      keys.push(`${y}-${m}-${d}`);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return keys;
+  };
+  const isRequestOnDay = (request, dateKey) =>
+    expandRequestDateKeys(request).includes(dateKey);
   const requestDateKeys = new Set(
     requests
       .filter((request) => request.type !== 'Request Documents')
-      .map((request) => request.dateKey)
-      .filter(Boolean)
+      .flatMap(expandRequestDateKeys)
   );
   const calendarTitle = calendarDate.toLocaleDateString('en-US', {
     month: 'long',
@@ -279,10 +294,16 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
   const selectedDayRequests = selectedCalendarDay
     ? requests.filter(
         (request) =>
-          request.dateKey === selectedCalendarDay.dateKey &&
-          request.type !== 'Request Documents'
+          typeof request.type === 'string' &&
+          request.type.toLowerCase().includes('leave') &&
+          isRequestOnDay(request, selectedCalendarDay.dateKey)
       )
     : [];
+  const LEAVE_TYPE_THAI_LABEL = {
+    'Sick Leave': 'ลาป่วย',
+    'Personal Leave': 'ลากิจ',
+    'Annual Leave': 'ลาพักร้อน'
+  };
   const selectedDayTitle = selectedCalendarDay?.date.toLocaleDateString('en-US', {
     weekday: 'short',
     day: '2-digit',
@@ -843,12 +864,12 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
                 {selectedDayRequests.map((request) => (
                   <div className="calendar-day-record" key={request.id}>
                     <div>
-                      <strong>{request.type}</strong>
-                      <span>{request.id}</span>
+                      <strong>{request.userName || 'User'}</strong>
+                      <span>
+                        {LEAVE_TYPE_THAI_LABEL[request.type] || 'N/A'}
+                        {request.time ? ` · ${request.time}` : ''}
+                      </span>
                     </div>
-                    <output className={`calendar-day-status calendar-day-status--${request.status}`}>
-                      {REQUEST_STATUS_LABEL[request.status] || request.status}
-                    </output>
                   </div>
                 ))}
               </div>
