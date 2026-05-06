@@ -1,4 +1,4 @@
-.ot-page {
+.requestdoc-page {
   --up-bg: #dddddd;
   --up-surface: #ffffff;
   --up-ink: #1a1f2c;
@@ -7,8 +7,6 @@
   --up-line: #000000;
   --up-line-soft: #efece4;
   --up-accent: #343434;
-  --up-accent-soft: #e3eaf6;
-  --up-accent-dark: #0d1f3e;
   --up-font-thai: 'Sarabun','IBM Plex Sans Thai',system-ui,sans-serif;
   --up-font-sans: 'Inter Tight','IBM Plex Sans Thai',system-ui,sans-serif;
   --up-font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -22,7 +20,7 @@
   text-align: left;
 }
 
-.ot-header {
+.requestdoc-header {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 16px;
@@ -34,7 +32,7 @@
   background: var(--up-surface);
 }
 
-.ot-back {
+.requestdoc-back {
   width: 44px;
   height: 44px;
   border: 1px solid var(--up-line);
@@ -48,12 +46,12 @@
   font-size: 22px;
 }
 
-.ot-back:hover {
+.requestdoc-back:hover {
   background: var(--up-accent);
   color: #ffffff;
 }
 
-.ot-eyebrow {
+.requestdoc-eyebrow {
   margin: 0 0 4px;
   color: var(--up-accent);
   font-family: var(--up-font-mono);
@@ -62,41 +60,40 @@
   text-transform: uppercase;
 }
 
-.ot-header h1 {
+.requestdoc-header h1 {
   margin: 0;
   color: var(--up-ink);
   font-family: var(--up-font-sans);
   font-size: 26px;
   font-weight: 600;
-  letter-spacing: -0.02em;
 }
 
-.ot-subtitle {
-  margin-top: 6px;
+.requestdoc-subtitle {
+  margin: 6px 0 0;
   color: var(--up-ink-2);
   font-size: 13px;
 }
 
-.ot-form {
+.requestdoc-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
   gap: 16px;
   align-items: start;
 }
 
-.ot-card,
-.ot-summary {
+.requestdoc-card,
+.requestdoc-summary {
   border: 1px solid var(--up-line);
   border-radius: 16px;
   background: var(--up-surface);
   padding: 20px;
 }
 
-.ot-card {
+.requestdoc-card {
   grid-column: 1;
 }
 
-.ot-card-head {
+.requestdoc-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -106,14 +103,14 @@
   border-bottom: 1px solid var(--up-line-soft);
 }
 
-.ot-card-head h2 {
+.requestdoc-card-head h2 {
   margin: 0;
   color: var(--up-ink);
   font-size: 16px;
   font-weight: 600;
 }
 
-.ot-card-head span {
+.requestdoc-card-head span {
   color: var(--up-ink-3);
   display: inline-flex;
   align-items: center;
@@ -122,17 +119,13 @@
   font-weight: 500;
 }
 
-.ot-field-grid {
+.requestdoc-field-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
-.ot-field-grid--date {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.ot-field {
+.requestdoc-field {
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -141,9 +134,8 @@
   font-weight: 500;
 }
 
-.ot-field input,
-.ot-field textarea,
-.ot-field output {
+.requestdoc-field select,
+.requestdoc-field textarea {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--up-line);
@@ -154,32 +146,18 @@
   padding: 11px 12px;
 }
 
-.ot-field textarea {
+.requestdoc-field textarea {
   min-height: 118px;
   resize: vertical;
 }
 
-.ot-field input:focus,
-.ot-field textarea:focus {
+.requestdoc-field select:focus,
+.requestdoc-field textarea:focus {
   border-color: var(--up-accent);
   outline: 3px solid rgba(52, 52, 52, 0.12);
 }
 
-.ot-field output {
-  min-height: 45px;
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-}
-
-.ot-warning {
-  margin-top: 10px;
-  color: var(--up-accent);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.ot-summary {
+.requestdoc-summary {
   position: sticky;
   top: 24px;
   grid-column: 2;
@@ -189,7 +167,7 @@
   gap: 14px;
 }
 
-.ot-summary div {
+.requestdoc-summary div {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -197,12 +175,12 @@
   border-bottom: 1px solid var(--up-line-soft);
 }
 
-.ot-summary span {
+.requestdoc-summary span {
   color: var(--up-ink-3);
   font-size: 12px;
 }
 
-.ot-summary strong {
+.requestdoc-summary strong {
   color: var(--up-ink);
   display: inline-flex;
   align-items: center;
@@ -212,7 +190,7 @@
   font-weight: 600;
 }
 
-.ot-submit {
+.requestdoc-submit {
   width: 100%;
   min-height: 48px;
   border: 1px solid var(--up-accent);
@@ -227,45 +205,45 @@
   font: 600 14px/1 var(--up-font-thai);
 }
 
-.ot-submit:disabled {
+.requestdoc-submit:disabled {
   cursor: not-allowed;
   opacity: 0.45;
 }
 
-.ot-submit:not(:disabled):hover {
+.requestdoc-submit:not(:disabled):hover {
   transform: translateY(-1px);
 }
 
 @media (max-width: 900px) {
-  .ot-form {
+  .requestdoc-form {
     grid-template-columns: 1fr;
   }
 
-  .ot-card,
-  .ot-summary {
+  .requestdoc-card,
+  .requestdoc-summary {
     grid-column: 1;
   }
 
-  .ot-summary {
+  .requestdoc-summary {
     position: static;
     grid-row: auto;
   }
 }
 
 @media (max-width: 560px) {
-  .ot-page {
+  .requestdoc-page {
     padding: 20px 16px 95px;
   }
 
-  .ot-header {
+  .requestdoc-header {
     padding: 16px;
   }
 
-  .ot-header h1 {
+  .requestdoc-header h1 {
     font-size: 22px;
   }
 
-  .ot-field-grid {
+  .requestdoc-field-grid {
     grid-template-columns: 1fr;
   }
 }

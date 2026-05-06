@@ -6,6 +6,7 @@ import {
   MdBeachAccess,
   MdClose,
   MdDescription,
+  MdDelete,
   MdHome,
   MdHomeWork,
   MdMoreTime,
@@ -82,9 +83,11 @@ const CREATE_REQUEST_OPTIONS = [
   { key: "leave", label: "Leave", icon: <MdBeachAccess /> },
   { key: "overtime", label: "Overtime", icon: <MdMoreTime /> },
   { key: "work-outsides", label: "Work Outsides", icon: <MdHomeWork /> },
+  { key: "request-documents", label: "Request documents", icon: <MdDescription /> },
   { key: "expense", label: "Expense", icon: <MdAttachMoney /> },
-  { key: "certificate", label: "Certificate", icon: <MdDescription /> },
 ];
+
+const PAGE_SIZE = 10;
 
 function StatusBadge({ status }) {
   return (
@@ -97,6 +100,7 @@ function StatusBadge({ status }) {
 
 export default function Request({
   data = REQUESTS,
+  onDeleteRequest,
   onCreateNew,
   onGoHome,
   onGoRecord,
@@ -106,6 +110,8 @@ export default function Request({
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [requestToDelete, setRequestToDelete] = useState(null);
+  const [page, setPage] = useState(1);
 
   const stats = useMemo(
     () => ({
@@ -130,6 +136,14 @@ export default function Request({
     });
   }, [data, filter, query]);
 
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const shouldShowPagination = filtered.length > PAGE_SIZE;
+  const currentPage = Math.min(page, pageCount);
+  const visibleRequests = useMemo(() => {
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    return filtered.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filtered, currentPage]);
+
   const handleCreate = () => {
     setShowCreateMenu(true);
   };
@@ -137,6 +151,12 @@ export default function Request({
   const handleSelectCreateOption = (optionKey) => {
     setShowCreateMenu(false);
     if (onCreateNew) onCreateNew(optionKey);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!requestToDelete) return;
+    onDeleteRequest?.(requestToDelete.id);
+    setRequestToDelete(null);
   };
 
   return (
@@ -193,7 +213,10 @@ export default function Request({
               className={`request-tab ${
                 filter === f.key ? "request-tab--active" : ""
               }`}
-              onClick={() => setFilter(f.key)}
+              onClick={() => {
+                setFilter(f.key);
+                setPage(1);
+              }}
             >
               {f.label}
             </button>
@@ -204,7 +227,10 @@ export default function Request({
           className="request-search"
           placeholder="ค้นหารหัสคำขอหรือประเภท..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(1);
+          }}
         />
       </section>
 
@@ -215,12 +241,13 @@ export default function Request({
           <div role="columnheader">วันที่ส่ง</div>
           <div role="columnheader">ผู้อนุมัติ</div>
           <div role="columnheader">สถานะ</div>
+          <div role="columnheader">Action</div>
         </div>
 
         {filtered.length === 0 ? (
           <div className="request-empty">ไม่พบรายการคำขอที่ตรงกับเงื่อนไข</div>
         ) : (
-          filtered.map((r) => (
+          visibleRequests.map((r) => (
             <div className="request-row" role="row" key={r.id}>
               <div className="request-row__id">{r.id}</div>
               <div className="request-row__type">
@@ -232,6 +259,17 @@ export default function Request({
               <div>
                 <StatusBadge status={r.status} />
               </div>
+              <div className="request-row__actions">
+                <button
+                  type="button"
+                  className="request-delete"
+                  onClick={() => setRequestToDelete(r)}
+                  aria-label={`Delete request ${r.id}`}
+                  title="Delete request"
+                >
+                  <MdDelete />
+                </button>
+              </div>
             </div>
           ))
         )}
@@ -239,14 +277,40 @@ export default function Request({
 
       <footer className="request-footer">
         <span className="request-footer__info">
-          แสดง 1–{filtered.length} จาก {data.length} รายการ
+          แสดง {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} จาก {filtered.length} รายการ
         </span>
-        <div className="request-pagination">
-          <button type="button" className="request-btn request-btn--page" aria-label="ก่อนหน้า">‹</button>
-          <button type="button" className="request-btn request-btn--page request-btn--active">1</button>
-          <button type="button" className="request-btn request-btn--page">2</button>
-          <button type="button" className="request-btn request-btn--page" aria-label="ถัดไป">›</button>
-        </div>
+        {shouldShowPagination && (
+          <div className="request-pagination">
+            <button
+              type="button"
+              className="request-btn request-btn--page"
+              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              aria-label="ก่อนหน้า"
+            >
+              ‹
+            </button>
+            {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
+              <button
+                type="button"
+                key={pageNumber}
+                className={`request-btn request-btn--page ${currentPage === pageNumber ? "request-btn--active" : ""}`}
+                onClick={() => setPage(pageNumber)}
+              >
+                {pageNumber}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="request-btn request-btn--page"
+              onClick={() => setPage((currentPage) => Math.min(pageCount, currentPage + 1))}
+              disabled={currentPage === pageCount}
+              aria-label="ถัดไป"
+            >
+              ›
+            </button>
+          </div>
+        )}
       </footer>
 
       {showCreateMenu && (
@@ -278,6 +342,50 @@ export default function Request({
                   <span>{option.label}</span>
                 </button>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {requestToDelete && (
+        <div
+          className="delete-request-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-request-title"
+        >
+          <div className="delete-request-panel">
+            <button
+              type="button"
+              className="delete-request-close"
+              onClick={() => setRequestToDelete(null)}
+              aria-label="Close delete confirmation"
+            >
+              <MdClose />
+            </button>
+            <h2 id="delete-request-title">Delete Request</h2>
+            <p>
+              Are you sure you want to delete {requestToDelete.id}?
+            </p>
+            <div className="delete-request-summary">
+              <strong>{requestToDelete.type}</strong>
+              <span>{requestToDelete.detail}</span>
+            </div>
+            <div className="delete-request-actions">
+              <button
+                type="button"
+                className="request-btn"
+                onClick={() => setRequestToDelete(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="request-btn request-btn--danger"
+                onClick={handleConfirmDelete}
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>

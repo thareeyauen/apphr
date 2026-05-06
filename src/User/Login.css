@@ -1,5 +1,5 @@
 .login-page {
-  --up-bg: #ffffff;
+  --up-bg: #dddddd;
   --up-surface: #ffffff;
   --up-ink: #1a1f2c;
   --up-ink-2: #000000;
@@ -54,7 +54,8 @@
   text-align: left;
 }
 
-.login-field input {
+.login-field input,
+.login-field select {
   width: 100%;
   height: 54px;
   border: 1px solid var(--up-line);
@@ -68,7 +69,8 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.login-field input:focus {
+.login-field input:focus,
+.login-field select:focus {
   border-color: var(--up-accent);
   box-shadow: 0 0 0 3px rgba(52, 52, 52, 0.12);
 }
@@ -123,7 +125,8 @@
     font-size: 28px;
   }
 
-  .login-field input {
+  .login-field input,
+  .login-field select {
     height: 52px;
   }
 

@@ -36,7 +36,17 @@ const getDateDiffInclusive = (startDate, endDate) => {
   return Math.floor((end - start) / oneDay) + 1;
 };
 
+const formatInputDate = (dateValue) => {
+  if (!dateValue) return '-';
+  return new Date(`${dateValue}T00:00:00`).toLocaleDateString('th-TH', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+};
+
 export default function Leave({
+  onSubmitRequest,
   onGoBack,
   onGoHome,
   onGoRecord,
@@ -69,6 +79,10 @@ export default function Leave({
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!canSubmit) return;
+    onSubmitRequest?.({
+      type: selectedLeave.label,
+      detail: `${formatInputDate(startDate)} - ${formatInputDate(endDate)} (${requestedDays} วัน) · ${selectedDayType.label} · ${reason.trim()}`
+    });
     onGoRequest?.();
   };
 

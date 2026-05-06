@@ -47,8 +47,12 @@ export default function Record({
               <div className="record-item-content">
                 <h3>{record.location}</h3>
                 <div className="record-meta">
+                  <span className="record-status">{record.status || 'Checked in'}</span>
                   <span><MdCalendarToday /> {record.date}</span>
-                  <span><MdAccessTime /> {record.time}</span>
+                  <span>
+                    <MdAccessTime /> {record.time}
+                    {record.checkOutTime ? ` - ${record.checkOutTime}` : ''}
+                  </span>
                 </div>
               </div>
               <button

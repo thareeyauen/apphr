@@ -29,7 +29,12 @@ const HOLIDAYS = {
 
 const APPROVER = 'คุณวิชัย ส.';
 
-const getDateKey = (date) => date.toISOString().slice(0, 10);
+const getDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const isWeekend = (dateValue) => {
   if (!dateValue) return false;
@@ -68,6 +73,15 @@ const getDateRangeValidation = (startDate, endDate) => {
   };
 };
 
+const formatInputDate = (dateValue) => {
+  if (!dateValue) return '-';
+  return new Date(`${dateValue}T00:00:00`).toLocaleDateString('th-TH', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+};
+
 const calculateHours = (startTime, endTime) => {
   if (!startTime || !endTime) return 0;
 
@@ -82,6 +96,7 @@ const calculateHours = (startTime, endTime) => {
 };
 
 export default function Overtime({
+  onSubmitRequest,
   onGoBack,
   onGoHome,
   onGoRecord,
@@ -111,6 +126,11 @@ export default function Overtime({
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!canSubmit) return;
+    onSubmitRequest?.({
+      type: 'Overtime',
+      detail: `${formatInputDate(startDate)} - ${formatInputDate(endDate)} · ${startTime}-${endTime} (${totalHours} ชั่วโมง) · ${reason.trim()}`,
+      approver: APPROVER
+    });
     onGoRequest?.();
   };
 

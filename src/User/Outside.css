@@ -1,5 +1,5 @@
 .outside-page {
-  --up-bg: #ffffff;
+  --up-bg: #dddddd;
   --up-surface: #ffffff;
   --up-ink: #1a1f2c;
   --up-ink-2: #000000;
@@ -124,7 +124,7 @@
 
 .outside-type-options {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 

@@ -14,7 +14,8 @@ import './Outside.css';
 
 const OUTSIDE_TYPES = [
   { id: 'wfh', label: 'WFH', detail: 'Work from home' },
-  { id: 'other', label: 'Other', detail: 'Other offsite location' }
+  { id: 'offsite', label: 'Offsite', detail: 'Work at an offsite location' },
+  { id: 'other', label: 'Other', detail: 'Specify work outside details' }
 ];
 
 const APPROVER = 'คุณวิชัย ส.';
@@ -31,6 +32,15 @@ const getDateDiffInclusive = (startDate, endDate) => {
   return Math.floor((end - start) / oneDay) + 1;
 };
 
+const formatInputDate = (dateValue) => {
+  if (!dateValue) return '-';
+  return new Date(`${dateValue}T00:00:00`).toLocaleDateString('th-TH', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+};
+
 const calculateHours = (startTime, endTime) => {
   if (!startTime || !endTime) return 0;
   const [startHour, startMinute] = startTime.split(':').map(Number);
@@ -41,6 +51,7 @@ const calculateHours = (startTime, endTime) => {
 };
 
 export default function Outside({
+  onSubmitRequest,
   onGoBack,
   onGoHome,
   onGoRecord,
@@ -55,22 +66,36 @@ export default function Outside({
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   const [location, setLocation] = useState('');
+  const [otherDetail, setOtherDetail] = useState('');
   const [reason, setReason] = useState('');
 
   const selectedType = OUTSIDE_TYPES.find((type) => type.id === outsideType) || OUTSIDE_TYPES[0];
   const dayCount = useMemo(() => getDateDiffInclusive(startDate, endDate), [startDate, endDate]);
   const hoursPerDay = useMemo(() => calculateHours(startTime, endTime), [startTime, endTime]);
   const totalHours = Math.round(dayCount * hoursPerDay * 100) / 100;
-  const needsLocation = outsideType === 'other';
+  const needsLocation = outsideType === 'offsite';
+  const needsOtherDetail = outsideType === 'other';
   const canSubmit =
     dayCount > 0 &&
     hoursPerDay > 0 &&
     reason.trim().length > 0 &&
-    (!needsLocation || location.trim().length > 0);
+    (!needsLocation || location.trim().length > 0) &&
+    (!needsOtherDetail || otherDetail.trim().length > 0);
 
   const handleSubmit = (event) => {
     event.preventDefault();
     if (!canSubmit) return;
+    const locationDetail = needsLocation
+      ? ` · ${location.trim()}`
+      : needsOtherDetail
+        ? ` · ${otherDetail.trim()}`
+        : '';
+
+    onSubmitRequest?.({
+      type: 'Work Outside',
+      detail: `${selectedType.label}${locationDetail} · ${formatInputDate(startDate)} - ${formatInputDate(endDate)} · ${startTime}-${endTime} (${totalHours} ชั่วโมง) · ${reason.trim()}`,
+      approver: APPROVER
+    });
     onGoRequest?.();
   };
 
@@ -108,12 +133,23 @@ export default function Outside({
           </div>
           {needsLocation && (
             <label className="outside-field outside-location">
-              <span>Location</span>
+              <span>Offsite location</span>
               <input
                 type="text"
                 value={location}
                 onChange={(event) => setLocation(event.target.value)}
                 placeholder="ระบุสถานที่ เช่น Co-working space / หน่วยงานภายนอก"
+              />
+            </label>
+          )}
+          {needsOtherDetail && (
+            <label className="outside-field outside-location">
+              <span>Other details</span>
+              <input
+                type="text"
+                value={otherDetail}
+                onChange={(event) => setOtherDetail(event.target.value)}
+                placeholder="Specify work outside details"
               />
             </label>
           )}
@@ -202,6 +238,18 @@ export default function Outside({
             <span>Type</span>
             <strong>{selectedType.label}</strong>
           </div>
+          {needsLocation && (
+            <div>
+              <span>Location</span>
+              <strong>{location.trim() || '-'}</strong>
+            </div>
+          )}
+          {needsOtherDetail && (
+            <div>
+              <span>Details</span>
+              <strong>{otherDetail.trim() || '-'}</strong>
+            </div>
+          )}
           <div>
             <span>Selected days</span>
             <strong>{dayCount} วัน</strong>

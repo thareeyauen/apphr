@@ -6,13 +6,16 @@ import {
   MdCardGiftcard,
   MdDescription,
   MdLocalHospital,
-  MdFitnessCenter,
-  MdSchool,
-  MdDirectionsBus,
-  MdRestaurant,
+  MdHealthAndSafety,
+  MdCheckroom,
+  MdEngineering,
+  MdLaptop,
   MdHome,
   MdAccessTime,
   MdAssignment,
+  MdEdit,
+  MdLogout,
+  MdSave,
   MdSchedule
 } from 'react-icons/md';
 import './Account.css';
@@ -26,41 +29,45 @@ const TAB_IDS = [
 ];
 
 const BENEFIT_ICONS = {
-  health: <MdLocalHospital />,
-  gym: <MdFitnessCenter />,
-  training: <MdSchool />,
-  transport: <MdDirectionsBus />,
-  food: <MdRestaurant />
+  socialSecurity: <MdHealthAndSafety />,
+  groupInsurance: <MdLocalHospital />,
+  suit: <MdCheckroom />,
+  workWear: <MdEngineering />,
+  equipment: <MdLaptop />
 };
 
 const DEFAULT_PROFILE = {
   user: {
     initial: 'TU',
+    prefix: 'นางสาว',
     nameTh: 'ธรีญา อึ้งตระกูล',
     nameEn: 'Thareeya Uentrakul',
     nicknameTh: 'แทร',
     gender: 'หญิง',
     age: 28,
     dob: '12 ส.ค. 2540',
-    citizenId: '1-2345-67890-12-3',
-    phone: '081-234-5678',
-    email: 'thareeya@example.com',
+    citizenId: '1234567890123',
+    phone: '0812345678',
+    email: 'employee@apphr.test',
     line: 'thareeya.u',
     addressCard: '123/45 ถนนพระราม 4 แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110',
     addressNow: '99/8 อาคาร XYZ ชั้น 4 ซอยทองหล่อ 10 แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110',
-    emergency: { name: 'คุณแม่ — สมใจ อึ้งตระกูล', phone: '089-876-5432' },
+    emergency: { name: 'คุณแม่ — สมใจ อึ้งตระกูล', phone: '0898765432' },
     education: [
-      { uni: 'จุฬาลงกรณ์มหาวิทยาลัย', faculty: 'คณะรัฐศาสตร์', degree: 'ปริญญาตรี', year: '2562' }
+      { degreeLevel: 'ปริญญาตรี', faculty: 'คณะรัฐศาสตร์', major: 'รัฐศาสตร์', institute: 'จุฬาลงกรณ์มหาวิทยาลัย', studyYears: '2558-2562' }
     ]
   },
   job: {
     code: 'HAND23',
     roleTh: 'Project Coordinator',
     department: 'ฝ่ายโครงการ',
-    type: 'พนักงานประจำ',
+    employeeLevel: 'Staff',
+    type: 'สัญญาจ้างประจำ',
     startDate: '01 เม.ย. 2566',
     tenure: '3 ปี 1 เดือน',
+    probationStart: '01 เม.ย. 2566',
     probationEnd: '01 ก.ค. 2566',
+    salary: '35,000 บาท',
     bank: {
       name: 'ธนาคารกสิกรไทย',
       branch: 'สาขาทองหล่อ',
@@ -71,24 +78,34 @@ const DEFAULT_PROFILE = {
       { date: '01 เม.ย. 2567', from: 'Project Assistant', to: 'Project Coordinator', kind: 'เลื่อนตำแหน่ง', salary: '+15%' },
       { date: '01 เม.ย. 2566', from: '—',                  to: 'Project Assistant',   kind: 'เริ่มงาน',     salary: '25,000' }
     ],
+    positionHistory: [
+      { year: '2567', from: 'Project Assistant', to: 'Project Coordinator', salaryChange: '28,750' },
+      { year: '2566', from: '—', to: 'Project Assistant', salaryChange: '25,000' }
+    ],
     benefits: {
-      health:    { titleTh: 'ประกันสุขภาพ',    titleEn: 'Health Insurance',  icon: 'health',    status: 'active', detail: 'วงเงิน 100,000 บาท/ปี ครอบคลุม OPD/IPD' },
-      gym:       { titleTh: 'ค่าออกกำลังกาย',  titleEn: 'Fitness Allowance', icon: 'gym',       status: 'issued', detail: 'เบิกได้ 1,000 บาท/เดือน' },
-      training:  { titleTh: 'งบฝึกอบรม',        titleEn: 'Training Budget',   icon: 'training',  status: 'active', detail: '15,000 บาท/ปี' },
-      transport: { titleTh: 'ค่าเดินทาง',       titleEn: 'Transport',         icon: 'transport', status: 'active', detail: '2,000 บาท/เดือน' }
+      socialSecurity: { titleTh: 'ประกันสังคม',          titleEn: 'Social Security',          icon: 'socialSecurity', status: 'active', detail: 'นายจ้างและลูกจ้างสมทบฝ่ายละ 5% ของค่าจ้าง (สูงสุด 750 บาท/เดือน)' },
+      groupInsurance: { titleTh: 'ประกันกลุ่ม',          titleEn: 'Group Insurance',          icon: 'groupInsurance', status: 'active', detail: 'วงเงิน 100,000 บาท/ปี ครอบคลุม OPD/IPD' },
+      suit:           { titleTh: 'การเบิกชุดสูท',        titleEn: 'Suit Allowance',           icon: 'suit',           status: 'active', detail: 'เบิกได้ 5,000 บาท/ปี' },
+      workWear:       { titleTh: 'การเบิกชุดทำงาน',     titleEn: 'Work Uniform Allowance',   icon: 'workWear',       status: 'active', detail: 'เบิกได้ 3,000 บาท/ปี' },
+      equipment:      { titleTh: 'การเบิกอุปกรณ์ทำงาน', titleEn: 'Work Equipment Allowance', icon: 'equipment',      status: 'active', detail: 'เบิกได้ 10,000 บาท/ปี' }
     }
   },
   company: {
     nameTh: 'บริษัท แฮนด์ วิสาหกิจเพื่อสังคม จำกัด',
-    nameEn: 'HAND Social Enterprise Co., Ltd.',
-    taxId: '0-1055-12345-67-8',
-    phone: '02-123-4567',
-    address: '456/12 ซอยทองหล่อ 10 แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110'
+    nameEn: 'HAND SOCIAL ENTERPRISE COMPANY LIMITED',
+    taxId: '0105559009660',
+    phone: '025506141',
+    address: 'เลขที่ 13 ซอยอรรคพัฒน์ ถนนสุขุมวิท 49-4 แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110',
+    employeeCount: '11 คน'
   },
   documents: [
-    { kind: 'สัญญาจ้างงาน',         file: 'employment-contract-2023.pdf', size: '256 KB', date: '01 เม.ย. 2566', status: 'signed' },
-    { kind: 'สำเนาบัตรประชาชน',      file: 'national-id.pdf',              size: '512 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
-    { kind: 'หนังสือผ่านทดลองงาน', file: 'probation-pass.pdf',           size: '128 KB', date: '01 ก.ค. 2566', status: 'signed' }
+    { kind: 'สำเนาบัตรประชาชน',         file: 'national-id.pdf',                size: '512 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
+    { kind: 'สำเนาทะเบียนบ้าน',         file: 'house-registration.pdf',         size: '480 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
+    { kind: 'หนังสือรับรองการศึกษา',    file: 'education-certificate.pdf',      size: '768 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
+    { kind: 'สำเนาบัญชีธนาคาร',         file: 'bank-account.pdf',               size: '320 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
+    { kind: 'สัญญาจ้างงาน',              file: 'employment-contract-2023.pdf',   size: '256 KB', date: '01 เม.ย. 2566', status: 'signed' },
+    { kind: 'เอกสารแจ้งปรับเงินเดือน',  file: 'salary-adjustment-2567.pdf',     size: '180 KB', date: '01 เม.ย. 2567', status: 'signed' },
+    { kind: 'เอกสารแจ้งปรับตำแหน่ง',    file: 'position-adjustment-2567.pdf',   size: '192 KB', date: '01 เม.ย. 2567', status: 'signed' }
   ]
 };
 
@@ -122,6 +139,29 @@ function KV({ k, v, mono, multiline }) {
   );
 }
 
+function EditableKV({ k, value, onChange, type = 'text', multiline = false }) {
+  return (
+    <label className="up-kv up-kv--edit">
+      <span className="up-kv-key">{k}</span>
+      {multiline ? (
+        <textarea
+          className="up-edit-field up-edit-field--textarea"
+          value={value || ''}
+          rows={3}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      ) : (
+        <input
+          className="up-edit-field"
+          type={type}
+          value={value ?? ''}
+          onChange={(event) => onChange(type === 'number' ? Number(event.target.value) : event.target.value)}
+        />
+      )}
+    </label>
+  );
+}
+
 function Group({ title, columns = 3, children }) {
   return (
     <div className="up-group">
@@ -141,6 +181,7 @@ function CompanyTab({ c }) {
         <KV k="ชื่อ (อังกฤษ)" v={c.nameEn} multiline />
         <KV k="เลขเสียภาษี"   v={c.taxId}  mono />
         <KV k="โทรศัพท์"      v={c.phone}  mono />
+        <KV k="จำนวนพนักงาน" v={c.employeeCount} />
       </Group>
       <Group columns={1}>
         <KV k="ที่อยู่จดทะเบียน" v={c.address} multiline />
@@ -149,39 +190,130 @@ function CompanyTab({ c }) {
   );
 }
 
-function GeneralTab({ u }) {
+function GeneralTab({ u, editing = false, draft = u, onDraftChange }) {
+  const setField = (field, value) => {
+    onDraftChange?.({
+      ...draft,
+      [field]: value
+    });
+  };
+  const setEmergencyField = (field, value) => {
+    onDraftChange?.({
+      ...draft,
+      emergency: {
+        ...draft.emergency,
+        [field]: value
+      }
+    });
+  };
+  const setEducationField = (index, field, value) => {
+    const education = [...(draft.education || [])];
+    education[index] = {
+      ...education[index],
+      [field]: value
+    };
+    onDraftChange?.({
+      ...draft,
+      education
+    });
+  };
+
   return (
     <>
       <Group title="ข้อมูลส่วนตัว" columns={3}>
-        <KV k="ชื่อ-สกุล (ไทย)"     v={u.nameTh} />
-        <KV k="ชื่อ-สกุล (อังกฤษ)"  v={u.nameEn} />
-        <KV k="ชื่อเล่น"             v={u.nicknameTh} />
-        <KV k="เพศ"                  v={u.gender} />
-        <KV k="อายุ"                 v={`${u.age} ปี`} />
-        <KV k="วันเกิด"              v={u.dob} />
-        <KV k="เลขบัตรประชาชน"       v={u.citizenId} mono />
+        {editing ? (
+          <>
+            <EditableKV k="คำนำหน้า" value={draft.prefix} onChange={(value) => setField('prefix', value)} />
+            <EditableKV k="ชื่อ-นามสกุล (TH)" value={draft.nameTh} onChange={(value) => setField('nameTh', value)} />
+            <EditableKV k="ชื่อ-นามสกุล (ENG)" value={draft.nameEn} onChange={(value) => setField('nameEn', value)} />
+            <EditableKV k="ชื่อเล่น (TH)" value={draft.nicknameTh} onChange={(value) => setField('nicknameTh', value)} />
+            <EditableKV k="เพศ" value={draft.gender} onChange={(value) => setField('gender', value)} />
+            <EditableKV k="วัน/เดือน/ปีเกิด" value={draft.dob} onChange={(value) => setField('dob', value)} />
+            <EditableKV k="อายุ" type="number" value={draft.age} onChange={(value) => setField('age', value)} />
+            <EditableKV k="เลขบัตรประชาชน (ไม่มีขีด)" value={draft.citizenId} onChange={(value) => setField('citizenId', value)} />
+          </>
+        ) : (
+          <>
+            <KV k="คำนำหน้า" v={u.prefix} />
+            <KV k="ชื่อ-นามสกุล (TH)" v={u.nameTh} />
+            <KV k="ชื่อ-นามสกุล (ENG)" v={u.nameEn} />
+            <KV k="ชื่อเล่น (TH)" v={u.nicknameTh} />
+            <KV k="เพศ" v={u.gender} />
+            <KV k="วัน/เดือน/ปีเกิด" v={u.dob} />
+            <KV k="อายุ" v={`${u.age} ปี`} />
+            <KV k="เลขบัตรประชาชน (ไม่มีขีด)" v={u.citizenId} mono />
+          </>
+        )}
       </Group>
       <Group title="ช่องทางติดต่อ" columns={3}>
-        <KV k="โทรศัพท์" v={u.phone} mono />
-        <KV k="Email"    v={u.email} mono />
-        <KV k="LINE ID"  v={u.line}  mono />
+        {editing ? (
+          <>
+            <EditableKV k="Email (mail บริษัท)" type="email" value={draft.email} onChange={(value) => setField('email', value)} />
+            <EditableKV k="เบอร์โทรติดต่อ (ไม่มีขีด)" value={draft.phone} onChange={(value) => setField('phone', value)} />
+            <EditableKV k="ช่องทางการติดต่อผ่าน line ID" value={draft.line} onChange={(value) => setField('line', value)} />
+          </>
+        ) : (
+          <>
+            <KV k="Email (mail บริษัท)" v={u.email} mono />
+            <KV k="เบอร์โทรติดต่อ (ไม่มีขีด)" v={u.phone} mono />
+            <KV k="ช่องทางการติดต่อผ่าน line ID" v={u.line} mono />
+          </>
+        )}
       </Group>
       <Group title="ที่อยู่" columns={2}>
-        <KV k="ตามบัตรประชาชน" v={u.addressCard} multiline />
-        <KV k="ปัจจุบัน"       v={u.addressNow}  multiline />
+        {editing ? (
+          <>
+            <EditableKV k="ที่อยู่ตามบัตรประชาชน" value={draft.addressCard} multiline onChange={(value) => setField('addressCard', value)} />
+            <EditableKV k="ที่อยู่ปัจจุบัน" value={draft.addressNow} multiline onChange={(value) => setField('addressNow', value)} />
+          </>
+        ) : (
+          <>
+            <KV k="ที่อยู่ตามบัตรประชาชน" v={u.addressCard} multiline />
+            <KV k="ที่อยู่ปัจจุบัน" v={u.addressNow} multiline />
+          </>
+        )}
       </Group>
-      <Group title="เบอร์ฉุกเฉิน" columns={2}>
-        <KV k="ผู้ติดต่อ" v={u.emergency.name} />
-        <KV k="เบอร์โทร"  v={u.emergency.phone} mono />
+      <Group title="ชื่อและเบอร์โทรติดต่อฉุกเฉิน" columns={2}>
+        {editing ? (
+          <>
+            <EditableKV k="ผู้ติดต่อ" value={draft.emergency?.name} onChange={(value) => setEmergencyField('name', value)} />
+            <EditableKV k="เบอร์โทร" value={draft.emergency?.phone} onChange={(value) => setEmergencyField('phone', value)} />
+          </>
+        ) : (
+          <>
+            <KV k="ผู้ติดต่อ" v={u.emergency.name} />
+            <KV k="เบอร์โทร"  v={u.emergency.phone} mono />
+          </>
+        )}
       </Group>
       <Group title="การศึกษา" columns={1}>
         <div className="up-table">
-          {u.education.map((e, i) => (
+          <div className="up-row up-row--education up-row--head">
+            <div>วุฒิการศึกษา</div>
+            <div>คณะ</div>
+            <div>สาขา</div>
+            <div>สถาบัน</div>
+            <div className="up-cell-mono--right">ปีที่เริ่ม-จบการศึกษา</div>
+          </div>
+          {(editing ? draft.education : u.education).map((e, i) => (
             <div key={i} className="up-row up-row--education up-row--zebra">
-              <div className="up-cell-strong">{e.uni}</div>
-              <div className="up-cell-muted">{e.faculty}</div>
-              <div className="up-cell-muted">{e.degree}</div>
-              <div className="up-cell-mono up-cell-mono--right">{e.year}</div>
+              {editing ? (
+                <>
+                  <input className="up-edit-field" value={e.degreeLevel || ''} onChange={(event) => setEducationField(i, 'degreeLevel', event.target.value)} />
+                  <input className="up-edit-field" value={e.faculty || ''} onChange={(event) => setEducationField(i, 'faculty', event.target.value)} />
+                  <input className="up-edit-field" value={e.major || ''} onChange={(event) => setEducationField(i, 'major', event.target.value)} />
+                  <input className="up-edit-field" value={e.institute || ''} onChange={(event) => setEducationField(i, 'institute', event.target.value)} />
+                  <input className="up-edit-field" value={e.studyYears || ''} onChange={(event) => setEducationField(i, 'studyYears', event.target.value)} />
+                </>
+              ) : (
+                <>
+                  <div className="up-cell-strong">{e.degreeLevel}</div>
+                  <div className="up-cell-muted">{e.faculty}</div>
+                  <div className="up-cell-muted">{e.major}</div>
+                  <div className="up-cell-muted">{e.institute}</div>
+                  <div className="up-cell-mono up-cell-mono--right">{e.studyYears}</div>
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -191,29 +323,44 @@ function GeneralTab({ u }) {
 }
 
 function JobTab({ j }) {
+  const positionHistory = j.positionHistory?.length
+    ? j.positionHistory.map((history, index) => ({
+        ...history,
+        salaryChange: history.salaryChange || j.history?.[index]?.salary || ''
+      }))
+    : (j.history || []).map((history) => ({
+        year: history.year || history.date,
+        from: history.from,
+        to: history.to,
+        salaryChange: history.salary || ''
+      }));
+
   return (
     <>
       <Group title="ตำแหน่งและสังกัด" columns={3}>
         <KV k="รหัสพนักงาน"           v={j.code} mono />
-        <KV k="ตำแหน่ง"                v={j.roleTh} />
-        <KV k="สังกัดฝ่าย"             v={j.department} />
-        <KV k="ประเภท"                 v={j.type} />
-        <KV k="วันเริ่มงาน"             v={j.startDate} />
-        <KV k="อายุงาน"                v={j.tenure} />
-        <KV k="วันสิ้นสุดทดลองงาน"     v={j.probationEnd} />
+        <KV k="ตำแหน่งงาน" v={j.roleTh} />
+        <KV k="สังกัดฝ่าย/แผนก" v={j.department} />
+        <KV k="ระดับพนักงาน" v={j.employeeLevel} />
+        <KV k="ประเภทพนักงาน" v={j.type} />
+        <KV k="วันเริ่มต้นทำงาน" v={j.startDate} />
+        <KV k="อายุงาน" v={j.tenure} />
+        <KV k="วันเริ่มทดลองงาน" v={j.probationStart} />
+        <KV k="วันผ่านทดลองงาน" v={j.probationEnd} />
+        <KV k="เงินเดือน" v={j.salary} mono />
       </Group>
-      <Group title="ธนาคาร · สำหรับโอนเงินเดือน" columns={2}>
-        <KV k="ธนาคาร"      v={j.bank.name} />
+      <Group title="ข้อมูลธนาคาร" columns={3}>
+        <KV k="ชื่อธนาคาร" v={j.bank.name} />
         <KV k="สาขา"        v={j.bank.branch} />
-        <KV k="เลขที่บัญชี" v={j.bank.acc} mono />
-        <KV k="ชื่อบัญชี"   v={j.bank.accName} />
+        <KV k="เลขบัญชี" v={j.bank.acc} mono />
       </Group>
       <Group title="ประวัติการเปลี่ยนแปลงตำแหน่ง" columns={1}>
         <div className="up-table">
-          {j.history.map((h, i) => (
+          {positionHistory.map((h, i) => (
             <div key={i} className="up-row up-row--history">
-              <div className="up-cell-mono">{h.date}</div>
+              <div className="up-cell-mono">{h.year}</div>
               <div className="up-cell-strong">{h.to}</div>
+              <div className="up-cell-mono up-cell-mono--right">{h.salaryChange || '—'}</div>
             </div>
           ))}
         </div>
@@ -271,40 +418,116 @@ function DocsTab({ documents }) {
   );
 }
 
+const getInitials = (name = '') =>
+  name
+    .split(' ')
+    .map((namePart) => namePart[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+const mergeProfileSection = (defaultSection, userSection = {}) => ({
+  ...defaultSection,
+  ...userSection
+});
+
+const normalizeEducation = (education = []) =>
+  education.map((item) => ({
+    degreeLevel: item.degreeLevel || item.degree || '',
+    faculty: item.faculty || '',
+    major: item.major || '',
+    institute: item.institute || item.uni || '',
+    studyYears: item.studyYears || item.year || ''
+  }));
+
+const removeDashes = (value = '') => String(value).replaceAll('-', '');
+
 export default function Account({
   user,
+  onUpdateUser,
   onGoHome,
   onGoRecord,
   onGoRequest,
   onOpenCheckIn,
+  onLogout,
   onMessage,
   initialTab = 'general'
 }) {
   const ref = useRef(null);
   const narrow = useNarrow(ref, 760);
   const [active, setActive] = useState(initialTab);
+  const [generalDraft, setGeneralDraft] = useState(null);
+  const profile = user?.profile || {};
 
   const data = {
     ...DEFAULT_PROFILE,
     user: {
-      ...DEFAULT_PROFILE.user,
+      ...mergeProfileSection(DEFAULT_PROFILE.user, profile.user),
       nameEn: user?.name || DEFAULT_PROFILE.user.nameEn,
-      initial: user?.name
-        ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-        : DEFAULT_PROFILE.user.initial
+      email: user?.email || profile.user?.email || DEFAULT_PROFILE.user.email,
+      initial: profile.user?.initial || (user?.name ? getInitials(user.name) : DEFAULT_PROFILE.user.initial),
+      citizenId: removeDashes(profile.user?.citizenId || DEFAULT_PROFILE.user.citizenId),
+      phone: removeDashes(profile.user?.phone || DEFAULT_PROFILE.user.phone),
+      emergency: {
+        ...DEFAULT_PROFILE.user.emergency,
+        ...profile.user?.emergency,
+        phone: removeDashes(profile.user?.emergency?.phone || DEFAULT_PROFILE.user.emergency.phone)
+      },
+      education: normalizeEducation(profile.user?.education || DEFAULT_PROFILE.user.education)
     },
     job: {
-      ...DEFAULT_PROFILE.job,
+      ...mergeProfileSection(DEFAULT_PROFILE.job, profile.job),
+      bank: {
+        ...DEFAULT_PROFILE.job.bank,
+        ...profile.job?.bank
+      },
+      benefits: {
+        ...DEFAULT_PROFILE.job.benefits,
+        ...profile.job?.benefits
+      },
       code: user?.employeeId || DEFAULT_PROFILE.job.code,
-      roleTh: user?.position || DEFAULT_PROFILE.job.roleTh
+      roleTh: user?.position || DEFAULT_PROFILE.job.roleTh,
+      employeeLevel: profile.job?.employeeLevel || DEFAULT_PROFILE.job.employeeLevel,
+      probationStart: profile.job?.probationStart || profile.job?.startDate || DEFAULT_PROFILE.job.probationStart,
+      salary: profile.job?.salary || DEFAULT_PROFILE.job.salary,
+      positionHistory: profile.job?.positionHistory || DEFAULT_PROFILE.job.positionHistory
     },
     company: {
-      ...DEFAULT_PROFILE.company,
+      ...mergeProfileSection(DEFAULT_PROFILE.company, profile.company),
       nameTh: user?.company || DEFAULT_PROFILE.company.nameTh
-    }
+    },
+    documents: profile.documents || DEFAULT_PROFILE.documents
   };
 
   const { user: u, job: j, company: c, documents } = data;
+  const isEditingGeneral = active === 'general' && Boolean(generalDraft);
+
+  const startEditGeneral = () => {
+    setGeneralDraft(JSON.parse(JSON.stringify(u)));
+  };
+
+  const cancelEditGeneral = () => {
+    setGeneralDraft(null);
+  };
+
+  const saveEditGeneral = () => {
+    if (!generalDraft) return;
+    const nextInitial = generalDraft.initial || getInitials(generalDraft.nameEn || user?.name || '');
+
+    onUpdateUser?.({
+      name: generalDraft.nameEn || user?.name,
+      email: generalDraft.email || user?.email,
+      profile: {
+        ...profile,
+        user: {
+          ...profile.user,
+          ...generalDraft,
+          initial: nextInitial
+        }
+      }
+    });
+    setGeneralDraft(null);
+  };
 
   return (
     <div ref={ref} className={'up-root' + (narrow ? ' is-narrow' : '')}>
@@ -316,12 +539,38 @@ export default function Account({
           <div className="up-subtitle">
             {j.roleTh} · {u.nameEn}
           </div>
+          {user?.userTypeLabel && (
+            <div className="up-user-type">{user.userTypeLabel}</div>
+          )}
         </div>
-        {onMessage && (
-          <div className="up-actions">
+        <div className="up-actions">
+          {active === 'general' && (
+            isEditingGeneral ? (
+              <>
+                <button className="up-btn" type="button" onClick={cancelEditGeneral}>Cancel</button>
+                <button className="up-btn up-btn--primary" type="button" onClick={saveEditGeneral}>
+                  <MdSave />
+                  Save
+                </button>
+              </>
+            ) : (
+              <button className="up-btn up-btn--primary" type="button" onClick={startEditGeneral}>
+                <MdEdit />
+                Edit
+              </button>
+            )
+          )}
+          {onMessage && (
             <button className="up-btn" onClick={onMessage}>ส่งข้อความ</button>
-          </div>
-        )}
+          )}
+          <button
+            className="up-btn up-btn--logout"
+            onClick={onLogout || (() => { window.location.href = '/login'; })}
+          >
+            <MdLogout />
+            Log out
+          </button>
+        </div>
       </div>
 
       <div className="up-tabs" role="tablist">
@@ -330,7 +579,10 @@ export default function Account({
             key={t.id}
             role="tab"
             aria-selected={active === t.id}
-            onClick={() => setActive(t.id)}
+            onClick={() => {
+              setActive(t.id);
+              setGeneralDraft(null);
+            }}
             className={'up-tab' + (active === t.id ? ' is-active' : '')}
           >
             {t.icon}
@@ -342,7 +594,14 @@ export default function Account({
       <div className="up-content">
         <div className="up-card">
           {active === 'company'  && <CompanyTab  c={c} />}
-          {active === 'general'  && <GeneralTab  u={u} />}
+          {active === 'general'  && (
+            <GeneralTab
+              u={u}
+              editing={isEditingGeneral}
+              draft={generalDraft || u}
+              onDraftChange={setGeneralDraft}
+            />
+          )}
           {active === 'job'      && <JobTab      j={j} />}
           {active === 'benefits' && <BenefitsTab j={j} />}
           {active === 'docs'     && <DocsTab     documents={documents} />}

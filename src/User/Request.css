@@ -1,5 +1,5 @@
 .request-page {
-  --up-bg: #ffffff;
+  --up-bg: #dddddd;
   --up-surface: #ffffff;
   --up-ink: #1a1f2c;
   --up-ink-2: #000000;
@@ -181,7 +181,7 @@
 .request-table__head,
 .request-row {
   display: grid;
-  grid-template-columns: 112px minmax(180px, 1fr) 130px 150px 118px;
+  grid-template-columns: 112px minmax(180px, 1fr) 130px 150px 118px 44px;
   gap: 12px;
   align-items: center;
 }
@@ -263,6 +263,39 @@
   color: var(--up-accent);
 }
 
+.request-row__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.request-delete {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--up-line);
+  border-radius: 8px;
+  background: var(--up-surface);
+  color: var(--up-ink-2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 18px;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.request-delete:hover {
+  border-color: var(--up-accent);
+  background: #faf9f5;
+  color: var(--up-accent);
+  transform: translateY(-1px);
+}
+
+.request-delete:focus-visible {
+  outline: 3px solid rgba(52, 52, 52, 0.16);
+  outline-offset: 2px;
+}
+
 .request-btn {
   height: 38px;
   border: 1px solid var(--up-line);
@@ -281,6 +314,12 @@
   border-color: var(--up-ink-3);
   background: var(--up-surface);
   transform: translateY(-1px);
+}
+
+.request-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
 }
 
 .request-btn:focus-visible {
@@ -302,6 +341,18 @@
 .request-btn--primary:hover {
   border-color: var(--up-accent);
   background: var(--up-accent);
+  color: #ffffff;
+}
+
+.request-btn--danger {
+  border-color: var(--up-accent);
+  background: var(--up-accent);
+  color: #ffffff;
+}
+
+.request-btn--danger:hover {
+  border-color: var(--up-accent);
+  background: #1f1f1f;
   color: #ffffff;
 }
 
@@ -348,6 +399,97 @@
   padding: 22px;
   background: rgba(26, 31, 44, 0.16);
   backdrop-filter: blur(8px);
+}
+
+.delete-request-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(26, 31, 44, 0.16);
+  backdrop-filter: blur(8px);
+}
+
+.delete-request-panel {
+  position: relative;
+  width: min(430px, 100%);
+  border: 1px solid var(--up-line);
+  border-radius: 18px;
+  background: var(--up-surface);
+  color: var(--up-ink);
+  padding: 28px;
+  box-shadow: 0 18px 50px rgba(26, 31, 44, 0.10);
+  animation: create-request-enter 0.22s ease-out;
+}
+
+.delete-request-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--up-line-soft);
+  border-radius: 10px;
+  background: var(--up-surface);
+  color: var(--up-ink-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23px;
+}
+
+.delete-request-close:hover {
+  border-color: var(--up-line);
+  background: #faf9f5;
+  color: var(--up-accent);
+}
+
+.delete-request-panel h2 {
+  margin: 0 42px 8px 0;
+  color: var(--up-ink);
+  font-family: var(--up-font-sans);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.delete-request-panel p {
+  margin: 0 0 16px;
+  color: var(--up-ink-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.delete-request-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--up-line-soft);
+  border-radius: 10px;
+  background: #faf9f5;
+  padding: 12px;
+}
+
+.delete-request-summary strong {
+  color: var(--up-ink);
+  font-size: 14px;
+}
+
+.delete-request-summary span {
+  color: var(--up-ink-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.delete-request-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
 }
 
 .create-request-panel {
@@ -526,7 +668,7 @@
     grid-template-areas:
       'id status'
       'type type'
-      'date date';
+      'date action';
     gap: 9px 12px;
     padding: 14px;
   }
@@ -549,6 +691,11 @@
 
   .request-row > div:has(.request-badge) {
     grid-area: status;
+  }
+
+  .request-row__actions {
+    grid-area: action;
+    align-self: end;
   }
 
   .request-footer {

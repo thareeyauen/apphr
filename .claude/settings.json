@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l c:\\\\\\\\apphr\\\\\\\\src\\\\\\\\User\\\\\\\\Landing.css c:\\\\\\\\apphr\\\\\\\\src\\\\\\\\index.css)",
+      "PowerShell(\\(Get-Content c:\\\\apphr\\\\src\\\\User\\\\Landing.css | Measure-Object -Line\\).Lines; \\(Get-Content c:\\\\apphr\\\\src\\\\index.css | Measure-Object -Line\\).Lines)",
+      "Bash(tasklist)",
+      "Bash(findstr /i \"node vite\")",
+      "Bash(powershell -NoProfile -Command \"Get-Process node -ErrorAction SilentlyContinue | Select-Object -First 5 Id, ProcessName, StartTime\")",
+      "Bash(findstr /N \"dateKey requests requestDateKey\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":5173 :3000 :4173\")",
+      "Bash(findstr LISTENING)",
+      "PowerShell($r = Invoke-WebRequest -Uri 'http://localhost:5173/src/User/Landing.jsx' -UseBasicParsing -TimeoutSec 5; $r.Content | Select-String -Pattern 'requestDateKeys|requests =|return .request.' | Select-Object -First 10)",
+      "PowerShell($r = Invoke-WebRequest -Uri 'http://localhost:5173/src/App.jsx' -UseBasicParsing -TimeoutSec 5; \\($r.Content | Select-String -Pattern 'dateKey|requests=\\\\{'\\).Matches | Select-Object -First 10 -ExpandProperty Value)",
+      "Bash(curl -s http://localhost:5173/src/App.jsx)"
+    ]
+  }
+}
