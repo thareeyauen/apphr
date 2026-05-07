@@ -4,6 +4,7 @@ import {
   MdAssignment,
   MdAttachMoney,
   MdBeachAccess,
+  MdCheck,
   MdClose,
   MdDescription,
   MdDelete,
@@ -98,51 +99,112 @@ function StatusBadge({ status }) {
   );
 }
 
+const APPROVER_LEVELS = ['Board Level', 'Director Level'];
+
 export default function Request({
   data = REQUESTS,
+  currentUser,
   onDeleteRequest,
+  onApproveRequest,
+  onRejectRequest,
   onCreateNew,
   onGoHome,
   onGoRecord,
   onGoAccount,
   onOpenCheckIn,
 }) {
+  const canApprove = APPROVER_LEVELS.includes(
+    currentUser?.profile?.job?.employeeLevel
+  );
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [showCreateMenu, setShowCreateMenu] = useState(false);
   const [requestToDelete, setRequestToDelete] = useState(null);
-  const [page, setPage] = useState(1);
+  const [requestToReview, setRequestToReview] = useState(null);
+  const [minePage, setMinePage] = useState(1);
+  const [approvePage, setApprovePage] = useState(1);
+  const [statsView, setStatsView] = useState("mine");
 
-  const stats = useMemo(
-    () => ({
-      total: data.length,
-      approved: data.filter((d) => d.status === "approved").length,
-      pending: data.filter((d) => d.status === "pending").length,
-      rejected: data.filter((d) => d.status === "rejected").length,
-    }),
-    [data]
+  const userOwnerKey =
+    currentUser?.employeeId || currentUser?.email || currentUser?.userType || "";
+  const isOwnedByCurrentUser = (record) => {
+    if (!userOwnerKey) return false;
+    const recordKey =
+      record?.ownerKey ||
+      record?.employeeId ||
+      record?.email ||
+      record?.userId ||
+      "";
+    return recordKey === userOwnerKey;
+  };
+
+  const myData = useMemo(
+    () => data.filter(isOwnedByCurrentUser),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, userOwnerKey]
   );
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return data.filter((r) => {
-      const matchStatus = filter === "all" || r.status === filter;
-      const matchQuery =
-        !q ||
-        r.id.toLowerCase().includes(q) ||
-        r.type.toLowerCase().includes(q) ||
-        r.detail.toLowerCase().includes(q);
-      return matchStatus && matchQuery;
-    });
-  }, [data, filter, query]);
+  const approveData = useMemo(() => {
+    if (!canApprove) return [];
+    return data.filter((r) => !isOwnedByCurrentUser(r));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, canApprove, userOwnerKey]);
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const shouldShowPagination = filtered.length > PAGE_SIZE;
-  const currentPage = Math.min(page, pageCount);
-  const visibleRequests = useMemo(() => {
-    const startIndex = (currentPage - 1) * PAGE_SIZE;
-    return filtered.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [filtered, currentPage]);
+  const statsSource =
+    canApprove && statsView === "approve" ? approveData : myData;
+  const stats = useMemo(
+    () => ({
+      total: statsSource.length,
+      approved: statsSource.filter((d) => d.status === "approved").length,
+      pending: statsSource.filter((d) => d.status === "pending").length,
+      rejected: statsSource.filter((d) => d.status === "rejected").length,
+    }),
+    [statsSource]
+  );
+
+  const applySearchAndStatus = (rows) => {
+    const q = query.trim().toLowerCase();
+    return rows
+      .filter((r) => {
+        const matchStatus = filter === "all" || r.status === filter;
+        const matchQuery =
+          !q ||
+          r.id.toLowerCase().includes(q) ||
+          r.type.toLowerCase().includes(q) ||
+          r.detail.toLowerCase().includes(q);
+        return matchStatus && matchQuery;
+      })
+      .sort((a, b) => {
+        if (a.status === "pending" && b.status !== "pending") return -1;
+        if (a.status !== "pending" && b.status === "pending") return 1;
+        return 0;
+      });
+  };
+
+  const filteredMine = useMemo(
+    () => applySearchAndStatus(myData),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [myData, filter, query]
+  );
+  const filteredApprove = useMemo(
+    () => applySearchAndStatus(approveData),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [approveData, filter, query]
+  );
+
+  const minePageCount = Math.max(1, Math.ceil(filteredMine.length / PAGE_SIZE));
+  const mineCurrentPage = Math.min(minePage, minePageCount);
+  const visibleMine = useMemo(() => {
+    const startIndex = (mineCurrentPage - 1) * PAGE_SIZE;
+    return filteredMine.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filteredMine, mineCurrentPage]);
+
+  const approvePageCount = Math.max(1, Math.ceil(filteredApprove.length / PAGE_SIZE));
+  const approveCurrentPage = Math.min(approvePage, approvePageCount);
+  const visibleApprove = useMemo(() => {
+    const startIndex = (approveCurrentPage - 1) * PAGE_SIZE;
+    return filteredApprove.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [filteredApprove, approveCurrentPage]);
 
   const handleCreate = () => {
     setShowCreateMenu(true);
@@ -158,6 +220,110 @@ export default function Request({
     onDeleteRequest?.(requestToDelete.id);
     setRequestToDelete(null);
   };
+
+  const handleConfirmReview = () => {
+    if (!requestToReview) return;
+    if (requestToReview.action === "approve") {
+      onApproveRequest?.(requestToReview.request.id);
+    } else if (requestToReview.action === "reject") {
+      onRejectRequest?.(requestToReview.request.id);
+    }
+    setRequestToReview(null);
+  };
+
+  const renderRequestTable = ({
+    title,
+    rows,
+    totalCount,
+    countLabel,
+    pageNumber,
+    pageCount,
+    onPageChange,
+    emptyMessage,
+    renderActions,
+  }) => (
+    <section className="request-table-block">
+      <div className="request-table-title-row">
+        <h2 className="request-table-title">{title}</h2>
+        <span className="request-table-count">
+          {countLabel || `${totalCount} รายการ`}
+        </span>
+      </div>
+      <section className="request-table" role="table">
+        <div className="request-table__head" role="row">
+          <div role="columnheader">รหัสคำขอ</div>
+          <div role="columnheader">ประเภท / รายละเอียด</div>
+          <div role="columnheader">วันที่ส่ง</div>
+          <div role="columnheader">ผู้อนุมัติ</div>
+          <div role="columnheader">สถานะ</div>
+          <div role="columnheader">Action</div>
+        </div>
+
+        {totalCount === 0 ? (
+          <div className="request-empty">{emptyMessage}</div>
+        ) : (
+          rows.map((r) => (
+            <div className="request-row" role="row" key={r.id}>
+              <div className="request-row__id">{r.id}</div>
+              <div className="request-row__type">
+                <div className="request-row__type-name">{r.type}</div>
+                <div className="request-row__type-detail">{r.detail}</div>
+              </div>
+              <div className="request-row__date">{r.date}</div>
+              <div className="request-row__approver">{r.approver}</div>
+              <div>
+                <StatusBadge status={r.status} />
+              </div>
+              <div className="request-row__actions">{renderActions(r)}</div>
+            </div>
+          ))
+        )}
+      </section>
+
+      <footer className="request-footer">
+        <span className="request-footer__info">
+          แสดง {totalCount === 0 ? 0 : (pageNumber - 1) * PAGE_SIZE + 1}–
+          {Math.min(pageNumber * PAGE_SIZE, totalCount)} จาก {totalCount} รายการ
+        </span>
+        {totalCount > PAGE_SIZE && (
+          <div className="request-pagination">
+            <button
+              type="button"
+              className="request-btn request-btn--page"
+              onClick={() => onPageChange((p) => Math.max(1, p - 1))}
+              disabled={pageNumber === 1}
+              aria-label="ก่อนหน้า"
+            >
+              ‹
+            </button>
+            {Array.from({ length: pageCount }, (_, index) => index + 1).map(
+              (n) => (
+                <button
+                  type="button"
+                  key={n}
+                  className={`request-btn request-btn--page ${
+                    pageNumber === n ? "request-btn--active" : ""
+                  }`}
+                  onClick={() => onPageChange(n)}
+                >
+                  {n}
+                </button>
+              )
+            )}
+            <button
+              type="button"
+              className="request-btn request-btn--page"
+              onClick={() => onPageChange((p) => Math.min(pageCount, p + 1))}
+              disabled={pageNumber === pageCount}
+              aria-label="ถัดไป"
+            >
+              ›
+            </button>
+          </div>
+        )}
+      </footer>
+    </section>
+  );
 
   return (
     <div className="request-page">
@@ -176,6 +342,33 @@ export default function Request({
           + สร้างคำขอใหม่
         </button>
       </header>
+
+      {canApprove && (
+        <div className="request-stats-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={statsView === "mine"}
+            className={`request-stats-tab ${
+              statsView === "mine" ? "request-stats-tab--active" : ""
+            }`}
+            onClick={() => setStatsView("mine")}
+          >
+            My Requests
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={statsView === "approve"}
+            className={`request-stats-tab ${
+              statsView === "approve" ? "request-stats-tab--active" : ""
+            }`}
+            onClick={() => setStatsView("approve")}
+          >
+            Requests for Review
+          </button>
+        </div>
+      )}
 
       <section className="request-stats">
         <div className="request-stat">
@@ -203,115 +396,98 @@ export default function Request({
       </section>
 
       <section className="request-toolbar">
-        <div className="request-tabs" role="tablist">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              role="tab"
-              aria-selected={filter === f.key}
-              className={`request-tab ${
-                filter === f.key ? "request-tab--active" : ""
-              }`}
-              onClick={() => {
-                setFilter(f.key);
-                setPage(1);
-              }}
-            >
-              {f.label}
-            </button>
-          ))}
+        <div className="request-search-group">
+          <input
+            type="text"
+            className="request-search"
+            placeholder="ค้นหารหัสคำขอหรือประเภท..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setMinePage(1);
+              setApprovePage(1);
+            }}
+          />
+          <select
+            className="request-filter-select"
+            value={filter}
+            onChange={(e) => {
+              setFilter(e.target.value);
+              setMinePage(1);
+              setApprovePage(1);
+            }}
+            aria-label="กรองตามสถานะ"
+          >
+            {FILTERS.map((f) => (
+              <option key={f.key} value={f.key}>
+                {f.label}
+              </option>
+            ))}
+          </select>
         </div>
-        <input
-          type="text"
-          className="request-search"
-          placeholder="ค้นหารหัสคำขอหรือประเภท..."
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(1);
-          }}
-        />
       </section>
 
-      <section className="request-table" role="table">
-        <div className="request-table__head" role="row">
-          <div role="columnheader">รหัสคำขอ</div>
-          <div role="columnheader">ประเภท / รายละเอียด</div>
-          <div role="columnheader">วันที่ส่ง</div>
-          <div role="columnheader">ผู้อนุมัติ</div>
-          <div role="columnheader">สถานะ</div>
-          <div role="columnheader">Action</div>
-        </div>
+      {renderRequestTable({
+        title: "My Requests",
+        rows: visibleMine,
+        totalCount: filteredMine.length,
+        pageNumber: mineCurrentPage,
+        pageCount: minePageCount,
+        onPageChange: setMinePage,
+        emptyMessage: "ไม่พบรายการคำขอที่ตรงกับเงื่อนไข",
+        renderActions: (r) => (
+          <button
+            type="button"
+            className="request-delete"
+            onClick={() => setRequestToDelete(r)}
+            aria-label={`Delete request ${r.id}`}
+            title="Delete request"
+          >
+            <MdDelete />
+          </button>
+        ),
+      })}
 
-        {filtered.length === 0 ? (
-          <div className="request-empty">ไม่พบรายการคำขอที่ตรงกับเงื่อนไข</div>
-        ) : (
-          visibleRequests.map((r) => (
-            <div className="request-row" role="row" key={r.id}>
-              <div className="request-row__id">{r.id}</div>
-              <div className="request-row__type">
-                <div className="request-row__type-name">{r.type}</div>
-                <div className="request-row__type-detail">{r.detail}</div>
-              </div>
-              <div className="request-row__date">{r.date}</div>
-              <div className="request-row__approver">{r.approver}</div>
-              <div>
-                <StatusBadge status={r.status} />
-              </div>
-              <div className="request-row__actions">
+      {canApprove &&
+        renderRequestTable({
+          title: "Requests for Review",
+          rows: visibleApprove,
+          totalCount: filteredApprove.length,
+          countLabel: `รออนุมัติ ${
+            approveData.filter((r) => r.status === "pending").length
+          } รายการ`,
+          pageNumber: approveCurrentPage,
+          pageCount: approvePageCount,
+          onPageChange: setApprovePage,
+          emptyMessage: "ไม่มีคำขอที่ตรงกับเงื่อนไข",
+          renderActions: (r) =>
+            r.status === "pending" ? (
+              <>
                 <button
                   type="button"
-                  className="request-delete"
-                  onClick={() => setRequestToDelete(r)}
-                  aria-label={`Delete request ${r.id}`}
-                  title="Delete request"
+                  className="request-approve request-approve--icon"
+                  onClick={() =>
+                    setRequestToReview({ request: r, action: "approve" })
+                  }
+                  aria-label={`Approve request ${r.id}`}
+                  title="Approve request"
                 >
-                  <MdDelete />
+                  <MdCheck />
                 </button>
-              </div>
-            </div>
-          ))
-        )}
-      </section>
-
-      <footer className="request-footer">
-        <span className="request-footer__info">
-          แสดง {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} จาก {filtered.length} รายการ
-        </span>
-        {shouldShowPagination && (
-          <div className="request-pagination">
-            <button
-              type="button"
-              className="request-btn request-btn--page"
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              aria-label="ก่อนหน้า"
-            >
-              ‹
-            </button>
-            {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
-              <button
-                type="button"
-                key={pageNumber}
-                className={`request-btn request-btn--page ${currentPage === pageNumber ? "request-btn--active" : ""}`}
-                onClick={() => setPage(pageNumber)}
-              >
-                {pageNumber}
-              </button>
-            ))}
-            <button
-              type="button"
-              className="request-btn request-btn--page"
-              onClick={() => setPage((currentPage) => Math.min(pageCount, currentPage + 1))}
-              disabled={currentPage === pageCount}
-              aria-label="ถัดไป"
-            >
-              ›
-            </button>
-          </div>
-        )}
-      </footer>
+                <button
+                  type="button"
+                  className="request-reject request-reject--icon"
+                  onClick={() =>
+                    setRequestToReview({ request: r, action: "reject" })
+                  }
+                  aria-label={`Reject request ${r.id}`}
+                  title="Reject request"
+                >
+                  <MdClose />
+                </button>
+              </>
+            ) : null,
+        })}
 
       {showCreateMenu && (
         <div
@@ -385,6 +561,62 @@ export default function Request({
                 onClick={handleConfirmDelete}
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {requestToReview && (
+        <div
+          className="delete-request-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="review-request-title"
+        >
+          <div className="delete-request-panel">
+            <button
+              type="button"
+              className="delete-request-close"
+              onClick={() => setRequestToReview(null)}
+              aria-label="Close confirmation"
+            >
+              <MdClose />
+            </button>
+            <h2 id="review-request-title">
+              {requestToReview.action === "approve"
+                ? "ยืนยันการอนุมัติ"
+                : "ยืนยันการไม่อนุมัติ"}
+            </h2>
+            <p>
+              {requestToReview.action === "approve"
+                ? `ต้องการอนุมัติคำขอ ${requestToReview.request.id} ใช่หรือไม่?`
+                : `ต้องการไม่อนุมัติคำขอ ${requestToReview.request.id} ใช่หรือไม่?`}
+            </p>
+            <div className="delete-request-summary">
+              <strong>{requestToReview.request.type}</strong>
+              <span>{requestToReview.request.detail}</span>
+            </div>
+            <div className="delete-request-actions">
+              <button
+                type="button"
+                className="request-btn"
+                onClick={() => setRequestToReview(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={
+                  requestToReview.action === "approve"
+                    ? "request-btn request-btn--success"
+                    : "request-btn request-btn--danger"
+                }
+                onClick={handleConfirmReview}
+              >
+                {requestToReview.action === "approve"
+                  ? "ยืนยันอนุมัติ"
+                  : "ยืนยันไม่อนุมัติ"}
               </button>
             </div>
           </div>

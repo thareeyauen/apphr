@@ -91,10 +91,19 @@ export default function Outside({
         ? ` · ${otherDetail.trim()}`
         : '';
 
+    const locationLabel = needsLocation
+      ? location.trim()
+      : needsOtherDetail
+        ? otherDetail.trim()
+        : '';
     onSubmitRequest?.({
       type: 'Work Outside',
       detail: `${selectedType.label}${locationDetail} · ${formatInputDate(startDate)} - ${formatInputDate(endDate)} · ${startTime}-${endTime} (${totalHours} ชั่วโมง) · ${reason.trim()}`,
-      approver: APPROVER
+      approver: APPROVER,
+      startDateKey: startDate,
+      endDateKey: endDate,
+      subType: selectedType.label,
+      location: locationLabel
     });
     onGoRequest?.();
   };

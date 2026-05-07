@@ -1,14 +1,13 @@
 import { MdArrowForward } from 'react-icons/md';
 import './Login.css';
-import { DEFAULT_USER_TYPE, USER_TYPES, getUserType, getUserTypeByEmail } from './userTypes';
+import { DEFAULT_USER_TYPE, getUserType, getUserTypeByEmail } from './userTypes';
 
 export default function Login({ onSignIn }) {
   const handleSubmit = (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const email = formData.get('email') || '';
-    const selectedUser = getUserType(formData.get('userType') || DEFAULT_USER_TYPE);
-    const matchedUser = getUserTypeByEmail(email) || selectedUser;
+    const matchedUser = getUserTypeByEmail(email) || getUserType(DEFAULT_USER_TYPE);
 
     onSignIn({
       ...matchedUser,
@@ -29,15 +28,6 @@ export default function Login({ onSignIn }) {
         <label className="login-field">
           <span>Password</span>
           <input name="password" type="password" autoComplete="current-password" />
-        </label>
-
-        <label className="login-field">
-          <span>User type</span>
-          <select name="userType" defaultValue={DEFAULT_USER_TYPE}>
-            {USER_TYPES.map((type) => (
-              <option key={type.id} value={type.id}>{type.label}</option>
-            ))}
-          </select>
         </label>
 
         <button className="login-submit" type="submit">

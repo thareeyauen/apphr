@@ -299,10 +299,22 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
           isRequestOnDay(request, selectedCalendarDay.dateKey)
       )
     : [];
+  const selectedDayOutsideRequests = selectedCalendarDay
+    ? requests.filter(
+        (request) =>
+          request.type === 'Work Outside' &&
+          isRequestOnDay(request, selectedCalendarDay.dateKey)
+      )
+    : [];
   const LEAVE_TYPE_THAI_LABEL = {
     'Sick Leave': 'ลาป่วย',
     'Personal Leave': 'ลากิจ',
     'Annual Leave': 'ลาพักร้อน'
+  };
+  const getOutsideSubType = (request) => {
+    if (request?.subType) return request.subType;
+    const first = request?.detail?.split(' · ')[0]?.trim();
+    return first || 'Work Outside';
   };
   const selectedDayTitle = selectedCalendarDay?.date.toLocaleDateString('en-US', {
     weekday: 'short',
@@ -837,6 +849,17 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
                   <span className="calendar-day-tab-count">{selectedDayRequests.length}</span>
                 )}
               </button>
+              <button
+                role="tab"
+                type="button"
+                className={`calendar-day-tab ${selectedDayTab === 'in-advance' ? 'active' : ''}`}
+                onClick={() => setSelectedDayTab('in-advance')}
+              >
+                In advance
+                {selectedDayOutsideRequests.length > 0 && (
+                  <span className="calendar-day-tab-count">{selectedDayOutsideRequests.length}</span>
+                )}
+              </button>
             </div>
             {selectedDayTab === 'checkin' ? (
               selectedDayCheckIns.length > 0 ? (
@@ -859,22 +882,52 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
               ) : (
                 <div className="calendar-day-empty">No check-in records</div>
               )
-            ) : selectedDayRequests.length > 0 ? (
-              <div className="calendar-day-list">
-                {selectedDayRequests.map((request) => (
-                  <div className="calendar-day-record" key={request.id}>
-                    <div>
-                      <strong>{request.userName || 'User'}</strong>
-                      <span>
-                        {LEAVE_TYPE_THAI_LABEL[request.type] || 'N/A'}
-                        {request.time ? ` · ${request.time}` : ''}
-                      </span>
+            ) : selectedDayTab === 'leave' ? (
+              selectedDayRequests.length > 0 ? (
+                <div className="calendar-day-list">
+                  {selectedDayRequests.map((request) => (
+                    <div className="calendar-day-record" key={request.id}>
+                      <div>
+                        <strong>{request.userName || 'User'}</strong>
+                        <span>
+                          {LEAVE_TYPE_THAI_LABEL[request.type] || 'N/A'}
+                          {request.time ? ` · ${request.time}` : ''}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              ) : (
+                <div className="calendar-day-empty">No leave requests</div>
+              )
+            ) : selectedDayOutsideRequests.length > 0 ? (
+              <div className="calendar-day-list">
+                {selectedDayOutsideRequests.map((request) => {
+                  const subType = getOutsideSubType(request);
+                  const locationLabel =
+                    subType === 'Offsite'
+                      ? 'Offsite location'
+                      : subType === 'Other'
+                        ? 'Other details'
+                        : '';
+                  return (
+                    <div className="calendar-day-record" key={request.id}>
+                      <div>
+                        <strong>{request.userName || 'User'}</strong>
+                        {locationLabel ? (
+                          <span>
+                            {locationLabel}: {request.location || '-'}
+                          </span>
+                        ) : (
+                          <span>{subType}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
-              <div className="calendar-day-empty">No leave requests</div>
+              <div className="calendar-day-empty">No in-advance requests</div>
             )}
           </div>
         </div>

@@ -222,6 +222,118 @@ export const USER_TYPES = [
         { kind: 'เอกสารแจ้งปรับตำแหน่ง', file: 'position-adjustment-MGR01-2567.pdf', size: '192 KB', date: '01 มี.ค. 2567', status: 'signed' }
       ]
     }
+  },
+  {
+    id: 'director',
+    label: 'ผู้อำนวยการ',
+    position: 'Director',
+    name: 'Director User',
+    employeeId: 'DIR01',
+    email: 'director@apphr.test',
+    password: 'Director@123',
+    profile: {
+      user: {
+        initial: 'DU',
+        prefix: 'นาย',
+        nameTh: 'อำนวย ผู้บริหาร',
+        nameEn: 'Director User',
+        nicknameTh: 'ผอ.',
+        email: 'director@apphr.test',
+        phone: '0821000004',
+        line: 'director.apphr',
+        citizenId: '110000004004',
+        education: [
+          { degreeLevel: 'ปริญญาโท', faculty: 'บริหารธุรกิจ', major: 'การจัดการเชิงกลยุทธ์', institute: 'มหาวิทยาลัยธรรมศาสตร์', studyYears: '2548-2550' }
+        ]
+      },
+      job: {
+        code: 'DIR01',
+        roleTh: 'Director',
+        department: 'สำนักผู้บริหาร',
+        employeeLevel: 'Director Level',
+        type: 'สัญญาจ้างประจำ',
+        startDate: '01 ม.ค. 2562',
+        tenure: '7 ปี 4 เดือน',
+        probationStart: '01 ม.ค. 2562',
+        probationEnd: '01 เม.ย. 2562',
+        salary: '120,000 บาท',
+        bank: {
+          name: 'ธนาคารกสิกรไทย',
+          branch: 'สาขาสีลม',
+          acc: '200-1-00004-4',
+          accName: 'อำนวย ผู้บริหาร'
+        },
+        positionHistory: [
+          { year: '2566', from: 'Senior Manager', to: 'Director', salaryChange: '+22%' },
+          { year: '2562', from: '—', to: 'Senior Manager', salaryChange: '95,000' }
+        ]
+      },
+      documents: [
+        { kind: 'สำเนาบัตรประชาชน', file: 'national-id-DIR01.pdf', size: '512 KB', date: '01 ม.ค. 2562', status: 'reviewed' },
+        { kind: 'สำเนาทะเบียนบ้าน', file: 'house-registration-DIR01.pdf', size: '480 KB', date: '01 ม.ค. 2562', status: 'reviewed' },
+        { kind: 'หนังสือรับรองการศึกษา', file: 'education-certificate-DIR01.pdf', size: '768 KB', date: '01 ม.ค. 2562', status: 'reviewed' },
+        { kind: 'สำเนาบัญชีธนาคาร', file: 'bank-account-DIR01.pdf', size: '320 KB', date: '01 ม.ค. 2562', status: 'reviewed' },
+        { kind: 'สัญญาจ้างงาน', file: 'employment-contract-DIR01.pdf', size: '256 KB', date: '01 ม.ค. 2562', status: 'signed' },
+        { kind: 'เอกสารแจ้งปรับเงินเดือน', file: 'salary-adjustment-DIR01-2567.pdf', size: '180 KB', date: '01 ม.ค. 2567', status: 'signed' },
+        { kind: 'เอกสารแจ้งปรับตำแหน่ง', file: 'position-adjustment-DIR01-2566.pdf', size: '192 KB', date: '01 ม.ค. 2566', status: 'signed' }
+      ]
+    }
+  },
+  {
+    id: 'board',
+    label: 'กรรมการบริหาร',
+    position: 'Board',
+    name: 'Board User',
+    employeeId: 'BRD01',
+    email: 'board@apphr.test',
+    password: 'Board@123',
+    profile: {
+      user: {
+        initial: 'BU',
+        prefix: 'นาง',
+        nameTh: 'บอร์ด กรรมการ',
+        nameEn: 'Board User',
+        nicknameTh: 'บอร์ด',
+        email: 'board@apphr.test',
+        phone: '0821000005',
+        line: 'board.apphr',
+        citizenId: '110000005005',
+        education: [
+          { degreeLevel: 'ปริญญาเอก', faculty: 'พาณิชยศาสตร์และการบัญชี', major: 'บริหารธุรกิจ', institute: 'จุฬาลงกรณ์มหาวิทยาลัย', studyYears: '2540-2544' }
+        ]
+      },
+      job: {
+        code: 'BRD01',
+        roleTh: 'Board Member',
+        department: 'คณะกรรมการบริหาร',
+        employeeLevel: 'Board Level',
+        type: 'สัญญาจ้างประจำ',
+        startDate: '01 ม.ค. 2558',
+        tenure: '11 ปี 4 เดือน',
+        probationStart: '01 ม.ค. 2558',
+        probationEnd: '01 เม.ย. 2558',
+        salary: '250,000 บาท',
+        bank: {
+          name: 'ธนาคารกรุงเทพ',
+          branch: 'สาขาสีลม',
+          acc: '200-1-00005-5',
+          accName: 'บอร์ด กรรมการ'
+        },
+        positionHistory: [
+          { year: '2563', from: 'Director', to: 'Board Member', salaryChange: '+30%' },
+          { year: '2558', from: '—', to: 'Director', salaryChange: '180,000' }
+        ]
+      },
+      documents: [
+        { kind: 'สำเนาบัตรประชาชน', file: 'national-id-BRD01.pdf', size: '512 KB', date: '01 ม.ค. 2558', status: 'reviewed' },
+        { kind: 'สำเนาทะเบียนบ้าน', file: 'house-registration-BRD01.pdf', size: '480 KB', date: '01 ม.ค. 2558', status: 'reviewed' },
+        { kind: 'หนังสือรับรองการศึกษา', file: 'education-certificate-BRD01.pdf', size: '768 KB', date: '01 ม.ค. 2558', status: 'reviewed' },
+        { kind: 'สำเนาบัญชีธนาคาร', file: 'bank-account-BRD01.pdf', size: '320 KB', date: '01 ม.ค. 2558', status: 'reviewed' },
+        { kind: 'สัญญาจ้างงาน', file: 'employment-contract-BRD01.pdf', size: '264 KB', date: '01 ม.ค. 2558', status: 'signed' },
+        { kind: 'เอกสารแจ้งปรับเงินเดือน', file: 'salary-adjustment-BRD01-2567.pdf', size: '180 KB', date: '01 ม.ค. 2567', status: 'signed' },
+        { kind: 'เอกสารแจ้งปรับตำแหน่ง', file: 'position-adjustment-BRD01-2563.pdf', size: '192 KB', date: '01 ม.ค. 2563', status: 'signed' }
+      ]
+    }
   }
 ];
 

@@ -218,6 +218,22 @@ function App() {
     )
   }
 
+  const approveRequestRecord = (requestId) => {
+    setRequestRecords((currentRequests) =>
+      currentRequests.map((request) =>
+        request.id === requestId ? { ...request, status: 'approved' } : request
+      )
+    )
+  }
+
+  const rejectRequestRecord = (requestId) => {
+    setRequestRecords((currentRequests) =>
+      currentRequests.map((request) =>
+        request.id === requestId ? { ...request, status: 'rejected' } : request
+      )
+    )
+  }
+
   const updateCurrentUser = (userPatch) => {
     setSignedInUser((currentUserData) => ({
       ...currentUserData,
@@ -240,9 +256,12 @@ function App() {
   const currentUserRecords = checkInRecords.filter((record) =>
     isRecordOwnedByUser(record, currentUser)
   )
-  const currentUserRequests = requestRecords.filter((record) =>
-    isRecordOwnedByUser(record, currentUser)
-  )
+  const currentUserLevel = currentUser?.profile?.job?.employeeLevel
+  const isApprover =
+    currentUserLevel === 'Board Level' || currentUserLevel === 'Director Level'
+  const currentUserRequests = isApprover
+    ? requestRecords
+    : requestRecords.filter((record) => isRecordOwnedByUser(record, currentUser))
 
   if (path === '/login') {
     return (
@@ -272,7 +291,10 @@ function App() {
     return (
       <Request
         data={currentUserRequests}
+        currentUser={currentUser}
         onDeleteRequest={deleteRequestRecord}
+        onApproveRequest={approveRequestRecord}
+        onRejectRequest={rejectRequestRecord}
         onCreateNew={(requestType) => {
           if (requestType === 'leave') navigate('/leave')
           if (requestType === 'overtime') navigate('/overtime')
