@@ -6,12 +6,13 @@ import {
   MdSchedule,
   MdAssignment,
   MdPerson,
-  MdPieChart,
-  MdNavigateBefore,
-  MdNavigateNext,
   MdBusiness,
   MdWorkOutline,
-  MdClose
+  MdClose,
+  MdCheckCircle,
+  MdWarningAmber,
+  MdLogin,
+  MdLogout
 } from 'react-icons/md';
 import './Landing.css';
 import Account from './Account';
@@ -29,26 +30,6 @@ const getDateKey = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-const getCalendarDays = (calendarDate) => {
-  const year = calendarDate.getFullYear();
-  const month = calendarDate.getMonth();
-  const firstDayOfMonth = new Date(year, month, 1);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const visibleCells = Math.ceil((firstDayOfMonth.getDay() + daysInMonth) / 7) * 7;
-
-  return Array.from({ length: visibleCells }, (_, index) => {
-    const dayOffset = index - firstDayOfMonth.getDay() + 1;
-    const date = new Date(year, month, dayOffset);
-
-    return {
-      date,
-      dateKey: getDateKey(date),
-      dayNumber: date.getDate(),
-      isCurrentMonth: date.getMonth() === month
-    };
-  });
-};
-
 const getUserRecordOwnerKey = (user) =>
   user?.employeeId || user?.email || user?.userType || '';
 
@@ -56,21 +37,15 @@ const getRecordOwnerKey = (record) =>
   record?.ownerKey || record?.employeeId || record?.email || record?.userId || '';
 
 export default function Landing({ user: currentUser, requests = [], onGoRecord, onGoRequest, onGoAccount }) {
-  const [activeTab, setActiveTab] = useState('calendar');
   const [activePage, setActivePage] = useState('home');
-  const [calendarDate, setCalendarDate] = useState(
-    () => new Date(today.getFullYear(), today.getMonth(), 1)
-  );
   const [showCheckInPopup, setShowCheckInPopup] = useState(false);
-  const [showLeaveQuotaPopup, setShowLeaveQuotaPopup] = useState(false);
-  const [selectedCalendarDay, setSelectedCalendarDay] = useState(null);
-  const [selectedDayTab, setSelectedDayTab] = useState('checkin');
   const [selectedCheckInLocation, setSelectedCheckInLocation] = useState('');
   const [offsiteAddress, setOffsiteAddress] = useState('');
   const [backdateTarget, setBackdateTarget] = useState(null);
   const [popupMode, setPopupMode] = useState('checkin');
   const [checkOutTarget, setCheckOutTarget] = useState(null);
   const [manualCheckOutTime, setManualCheckOutTime] = useState('17:00');
+  const [checkInNote, setCheckInNote] = useState('');
   const [checkInRecords, setCheckInRecords] = useState(() => {
     const savedRecords = localStorage.getItem(CHECK_IN_RECORDS_KEY);
     return savedRecords ? JSON.parse(savedRecords) : [];
@@ -179,18 +154,10 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     { icon: <MdWorkOutline />, name: 'Offsite', detail: 'Set address' }
   ];
 
-  const calendarDays = getCalendarDays(calendarDate);
   const todayKey = getDateKey(today);
   const userCheckInDateKeys = new Set(
     userCheckInRecords.map((record) => record.dateKey).filter(Boolean)
   );
-  const checkInRecordsByDate = checkInRecords.reduce((recordsByDate, record) => {
-    if (!record.dateKey) return recordsByDate;
-    return {
-      ...recordsByDate,
-      [record.dateKey]: [...(recordsByDate[record.dateKey] || []), record]
-    };
-  }, {});
   const expandRequestDateKeys = (request) => {
     const startKey = request.startDateKey || request.dateKey;
     const endKey = request.endDateKey || startKey;
@@ -211,18 +178,11 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     }
     return keys;
   };
-  const isRequestOnDay = (request, dateKey) =>
-    expandRequestDateKeys(request).includes(dateKey);
   const requestDateKeys = new Set(
     requests
       .filter((request) => request.type !== 'Request Documents')
       .flatMap(expandRequestDateKeys)
   );
-  const calendarTitle = calendarDate.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric'
-  });
-
   const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
 
   const formatDateLabel = (date) =>
@@ -272,68 +232,69 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     a.dateKey < b.dateKey ? 1 : a.dateKey > b.dateKey ? -1 : 0
   );
 
-  const getDayMark = (calendarDay) => {
-    if (!calendarDay.isCurrentMonth) return '';
-    if (userCheckInDateKeys.has(calendarDay.dateKey)) return 'checkined';
-    if (requestDateKeys.has(calendarDay.dateKey)) return 'request';
-    if (isWeekend(calendarDay.date)) return 'holiday';
-    if (calendarDay.dateKey >= todayKey) return '';
-    return 'absent';
+  const todayCheckIn = userCheckInRecords.find((record) => record.dateKey === todayKey);
+
+  const getStatusInfo = (location) => {
+    if (!location) return { label: 'ยังไม่เช็คอิน', tone: 'idle' };
+    const lower = String(location).toLowerCase();
+    if (lower === 'wfh') return { label: 'Work from home', tone: 'wfh' };
+    if (lower.includes('hand') || lower.includes('krac')) return { label: 'ในสำนักงาน', tone: 'office' };
+    return { label: 'นอกสำนักงาน', tone: 'offsite' };
   };
 
-  const getDayClass = (calendarDay) => {
-    const dayMark = getDayMark(calendarDay);
-    const monthClass = calendarDay.isCurrentMonth ? '' : 'other-month';
-    const todayClass = calendarDay.dateKey === todayKey ? 'today' : '';
-    const checkInClass = userCheckInDateKeys.has(calendarDay.dateKey) ? 'has-checkin' : '';
-    return `${monthClass} ${todayClass} ${dayMark || 'no-mark'} ${checkInClass}`.trim();
-  };
+  const selfNickname = user.nickname || 'เพ้นท์';
+  const selfRole = user.role || user.position || 'Junior Analyst';
+  const selfInitial = (selfNickname || user.name || '?').trim().charAt(0).toUpperCase();
+  const selfStatus = todayCheckIn?.checkOutTime
+    ? { label: 'เช็คเอาท์แล้ว', tone: 'done' }
+    : getStatusInfo(todayCheckIn?.location);
 
-  const getDayCheckIns = (calendarDay) => checkInRecordsByDate[calendarDay.dateKey] || [];
-  const selectedDayCheckIns = selectedCalendarDay ? getDayCheckIns(selectedCalendarDay) : [];
-  const selectedDayRequests = selectedCalendarDay
-    ? requests.filter(
-        (request) =>
-          typeof request.type === 'string' &&
-          request.type.toLowerCase().includes('leave') &&
-          isRequestOnDay(request, selectedCalendarDay.dateKey)
-      )
-    : [];
-  const selectedDayOutsideRequests = selectedCalendarDay
-    ? requests.filter(
-        (request) =>
-          request.type === 'Work Outside' &&
-          isRequestOnDay(request, selectedCalendarDay.dateKey)
-      )
-    : [];
-  const LEAVE_TYPE_THAI_LABEL = {
-    'Sick Leave': 'ลาป่วย',
-    'Personal Leave': 'ลากิจ',
-    'Annual Leave': 'ลาพักร้อน'
-  };
-  const getOutsideSubType = (request) => {
-    if (request?.subType) return request.subType;
-    const first = request?.detail?.split(' · ')[0]?.trim();
-    return first || 'Work Outside';
-  };
-  const selectedDayTitle = selectedCalendarDay?.date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric'
-  });
-
-  const goToPreviousMonth = () => {
-    setCalendarDate(
-      (currentDate) => new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    );
-  };
-
-  const goToNextMonth = () => {
-    setCalendarDate(
-      (currentDate) => new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-    );
-  };
+  const teamMembers = [
+    {
+      id: 'self',
+      nickname: selfNickname,
+      role: selfRole,
+      initial: selfInitial,
+      accent: '#C4895A',
+      status: selfStatus,
+      checkInTime: todayCheckIn?.time,
+      checkOutTime: todayCheckIn?.checkOutTime,
+      location: todayCheckIn?.location,
+      note: todayCheckIn?.note,
+      isSelf: true
+    },
+    {
+      id: 'tm-jen',
+      nickname: 'เจน',
+      role: 'Project Manager',
+      initial: 'J',
+      accent: '#9ec5d8',
+      status: { label: 'ในสำนักงาน', tone: 'office' },
+      checkInTime: '08:42',
+      location: 'HAND SE Thonglor'
+    },
+    {
+      id: 'tm-boss',
+      nickname: 'บอส',
+      role: 'Senior Designer',
+      initial: 'B',
+      accent: '#a3d4a7',
+      status: { label: 'Work from home', tone: 'wfh' },
+      checkInTime: '09:10',
+      checkOutTime: '17:30',
+      location: 'WFH',
+      note: 'ปิดงาน design system ถึง 18:00'
+    },
+    {
+      id: 'tm-mim',
+      nickname: 'มิ้ม',
+      role: 'Researcher',
+      initial: 'M',
+      accent: '#d9b0e3',
+      status: { label: 'ลาพักร้อน', tone: 'leave' },
+      note: 'ลาพักร้อน 12 - 13 พ.ค.'
+    }
+  ];
 
   const activeCheckIn = userCheckInRecords.find(
     (record) => record.dateKey === todayKey && !record.checkOutTime
@@ -346,6 +307,7 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     setBackdateTarget(null);
     setCheckOutTarget(null);
     setManualCheckOutTime('17:00');
+    setCheckInNote('');
     setPopupMode('checkin');
   };
 
@@ -362,7 +324,6 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     setCheckOutTarget(record);
     setManualCheckOutTime('17:00');
     setPopupMode('manual-checkout');
-    setSelectedCalendarDay(null);
     setShowCheckInPopup(true);
   };
 
@@ -372,6 +333,7 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     setBackdateTarget({ ...day, date: targetDate });
     setSelectedCheckInLocation('');
     setOffsiteAddress('');
+    setCheckInNote('');
     setPopupMode('checkin');
     setShowCheckInPopup(true);
   };
@@ -410,7 +372,8 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
         userName: user.name,
         userType: user.userType,
         userTypeLabel: user.userTypeLabel,
-        location
+        location,
+        note: checkInNote.trim() || undefined
       },
       ...currentRecords
     ]);
@@ -516,150 +479,129 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
 
   return (
     <div className="landing-container">
-      {/* Header Card */}
-      <div className="header-card">
-        <div className="header-content">
-          <div className="user-info">
-            <div className="user-photo" aria-label={user.name}>
-              {userInitials}
+      {/* Dashboard */}
+      <div className="dashboard">
+        {/* Welcome + Today's status (combined) */}
+        <section className="dashboard-card welcome-card">
+          <div className="welcome-card__head">
+            <div className="welcome-card__user">
+              <div className="welcome-card__avatar" aria-label={user.name}>
+                {userInitials}
+              </div>
+              <div className="welcome-card__info">
+                <h2 className="welcome-card__name">{user.name}</h2>
+                <p className="welcome-card__type">{user.userTypeLabel}</p>
+              </div>
             </div>
-            <div className="user-details">
-              <h2>Welcome!</h2>
-              <p className="user-name">{user.name}</p>
-              <p className="user-type">{user.userTypeLabel}</p>
-              <p className="user-date"><MdDateRange /> {userDate}</p>
-            </div>
-          </div>
-          <button className="leave-quota-btn" onClick={() => setShowLeaveQuotaPopup(true)}>
-            <span className="quota-icon"><MdPieChart /></span>
-            <div className="quota-text">
-              <small>Leave Quota</small>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="nav-tabs">
-        <button
-          className={`tab ${activeTab === 'calendar' ? 'active' : ''}`}
-          onClick={() => setActiveTab('calendar')}
-        >
-          Calendar
-        </button>
-        <button
-          className={`tab ${activeTab === 'not-checked-in' ? 'active' : ''}`}
-          onClick={() => setActiveTab('not-checked-in')}
-        >
-          Not yet check in
-          {pendingItems.length > 0 && (
-            <span className="badge">{pendingItems.length}</span>
-          )}
-        </button>
-        <button
-          className={`tab ${activeTab === 'announcements' ? 'active' : ''}`}
-          onClick={() => setActiveTab('announcements')}
-        >
-          Announcements
-          <span className="badge">1</span>
-        </button>
-      </div>
-
-      {/* Calendar Section */}
-      {activeTab === 'calendar' && (
-        <div className="calendar-section">
-          <div className="calendar-header">
-            <button className="nav-arrow" onClick={goToPreviousMonth} aria-label="Previous month">
-              <MdNavigateBefore />
-            </button>
-            <h3>{calendarTitle}</h3>
-            <button className="nav-arrow" onClick={goToNextMonth} aria-label="Next month">
-              <MdNavigateNext />
-            </button>
-          </div>
-
-          <div className="calendar-grid">
-            <div className="weekdays">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="weekday">{day}</div>
-              ))}
-            </div>
-
-            <div className="days">
-              {calendarDays.map((calendarDay) => (
-                <button
-                  type="button"
-                  key={calendarDay.dateKey}
-                  className={`day ${getDayClass(calendarDay)}`}
-                  onClick={() => setSelectedCalendarDay(calendarDay)}
-                >
-                  <span className="day-number">{calendarDay.dayNumber}</span>
-                  <div className={`day-mark ${getDayMark(calendarDay)}`}></div>
-                </button>
-              ))}
+            <div className="welcome-card__date">
+              <MdDateRange />
+              <span>{userDate}</span>
             </div>
           </div>
 
-          <div className="calendar-legend">
-            <div className="legend-item">
-              <div className="legend-dot holiday"></div>
-              <span>Holiday</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-dot checkined"></div>
-              <span>Check In</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-dot absent"></div>
-              <span>Absent</span>
-            </div>
-            <div className="legend-item">
-              <div className="legend-dot request"></div>
-              <span>Request</span>
-            </div>
-          </div>
-        </div>
-      )}
+          <div className="welcome-card__divider" />
 
-      {activeTab === 'not-checked-in' && (
-        <div className="not-checked-in-section">
-          {pendingItems.length === 0 ? (
-            <div className="not-checked-in-empty">ไม่มีวันที่ค้างดำเนินการ</div>
+          {todayCheckIn ? (
+            <div className="dashboard-today dashboard-today--in">
+              <div className="dashboard-today-status">
+                <MdCheckCircle />
+                <strong>
+                  {todayCheckIn.checkOutTime ? 'เช็คเอาท์แล้ว' : 'เช็คอินแล้ว'}
+                </strong>
+              </div>
+              <dl className="dashboard-today-meta">
+                <div>
+                  <dt>Check in</dt>
+                  <dd>{todayCheckIn.time || '-'}</dd>
+                </div>
+                {todayCheckIn.checkOutTime && (
+                  <div>
+                    <dt>Check out</dt>
+                    <dd>{todayCheckIn.checkOutTime}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>Location</dt>
+                  <dd>{todayCheckIn.location || '-'}</dd>
+                </div>
+              </dl>
+            </div>
           ) : (
-            <ul className="not-checked-in-list">
-              {pendingItems.map((item) => (
-                <li key={`${item.kind}-${item.dateKey}-${item.record?.id || ''}`}>
-                  <button
-                    type="button"
-                    className={`not-checked-in-item not-checked-in-item--${item.kind}`}
-                    onClick={() => {
-                      if (item.kind === 'forgot-checkout') {
-                        openManualCheckOut(item.record);
-                      } else {
-                        openBackdatedCheckIn(item);
-                      }
-                    }}
-                  >
-                    <span className="not-checked-in-dot" aria-hidden="true"></span>
-                    <span className="not-checked-in-label">
-                      {item.label}
-                      {item.kind === 'forgot-checkout' && (
-                        <span className="not-checked-in-sub"> · ลืม check out (check in {item.record.time})</span>
-                      )}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="dashboard-today dashboard-today--out">
+              <div className="dashboard-today-status">
+                <MdWarningAmber />
+                <strong>ยังไม่ได้เช็คอินวันนี้</strong>
+              </div>
+            </div>
           )}
-        </div>
-      )}
+          {!todayCheckIn?.checkOutTime && (
+            <button
+              type="button"
+              className={`dashboard-primary-btn ${activeCheckIn ? 'dashboard-primary-btn--out' : 'dashboard-primary-btn--in'}`}
+              onClick={openCheckInPopup}
+            >
+              {activeCheckIn ? <MdLogout /> : <MdLogin />}
+              <span>{activeCheckIn ? 'Check out' : 'Check in'}</span>
+            </button>
+          )}
+        </section>
 
-      {activeTab === 'announcements' && (
-        <div className="tab-content">
-          <p>Announcements content here</p>
-        </div>
-      )}
+        {/* Team status */}
+        <section className="dashboard-card">
+          <div className="dashboard-card__head">
+            <h3>สถานะทีม</h3>
+            <span className="dashboard-card__sub">วันนี้</span>
+          </div>
+          <div className="team-status-list">
+            {teamMembers.map((member) => (
+              <article
+                key={member.id}
+                className={`team-card${member.isSelf ? ' team-card--self' : ''}`}
+              >
+                <header className="team-card__head">
+                  <div className="team-card__person">
+                    <div className="team-card__avatar">
+                      {member.initial}
+                    </div>
+                    <div className="team-card__id">
+                      <strong>{member.nickname}{member.isSelf && <small>คุณ</small>}</strong>
+                      <span>{member.role}</span>
+                    </div>
+                  </div>
+                  <div className={`team-card__status team-card__status--${member.status.tone}`}>
+                    <span className="team-card__dot" />
+                    {member.status.label}
+                  </div>
+                </header>
+                {(member.checkInTime || member.checkOutTime || member.location) && (
+                  <dl className="team-card__meta">
+                    {member.checkInTime && (
+                      <div>
+                        <dt>Check-in</dt>
+                        <dd>{member.checkInTime}</dd>
+                      </div>
+                    )}
+                    {member.checkOutTime && (
+                      <div>
+                        <dt>Check-out</dt>
+                        <dd>{member.checkOutTime}</dd>
+                      </div>
+                    )}
+                    {member.location && (
+                      <div>
+                        <dt>Where</dt>
+                        <dd>{member.location}</dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
+                {member.note && <p className="team-card__note">{member.note}</p>}
+              </article>
+            ))}
+          </div>
+        </section>
+
+      </div>
 
       {/* Bottom Navigation */}
       <div className="bottom-nav">
@@ -788,6 +730,18 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
                     />
                   </label>
                 )}
+                {selectedCheckInLocation && (
+                  <label className="offsite-field">
+                    <span>Note (ไม่บังคับ)</span>
+                    <textarea
+                      value={checkInNote}
+                      onChange={(event) => setCheckInNote(event.target.value)}
+                      placeholder="เช่น ประชุมกับ TCDC ถึง 16:00"
+                      rows="2"
+                      maxLength={120}
+                    />
+                  </label>
+                )}
                 <button
                   className="checkin-submit"
                   disabled={!selectedCheckInLocation || (selectedCheckInLocation === 'Offsite' && !offsiteAddress.trim())}
@@ -801,164 +755,6 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
         </div>
       )}
 
-      {selectedCalendarDay && (
-        <div
-          className="calendar-day-overlay"
-          onClick={() => {
-            setSelectedCalendarDay(null);
-            setSelectedDayTab('checkin');
-          }}
-        >
-          <div className="calendar-day-popup" onClick={(event) => event.stopPropagation()}>
-            <div className="calendar-day-header">
-              <div>
-                <h3>Day details</h3>
-                <p>{selectedDayTitle}</p>
-              </div>
-              <button
-                className="calendar-day-close"
-                onClick={() => {
-                  setSelectedCalendarDay(null);
-                  setSelectedDayTab('checkin');
-                }}
-                aria-label="Close calendar day"
-              >
-                <MdClose />
-              </button>
-            </div>
-            <div className="calendar-day-tabs" role="tablist">
-              <button
-                role="tab"
-                type="button"
-                className={`calendar-day-tab ${selectedDayTab === 'checkin' ? 'active' : ''}`}
-                onClick={() => setSelectedDayTab('checkin')}
-              >
-                Check-in
-                {selectedDayCheckIns.length > 0 && (
-                  <span className="calendar-day-tab-count">{selectedDayCheckIns.length}</span>
-                )}
-              </button>
-              <button
-                role="tab"
-                type="button"
-                className={`calendar-day-tab ${selectedDayTab === 'leave' ? 'active' : ''}`}
-                onClick={() => setSelectedDayTab('leave')}
-              >
-                Leave
-                {selectedDayRequests.length > 0 && (
-                  <span className="calendar-day-tab-count">{selectedDayRequests.length}</span>
-                )}
-              </button>
-              <button
-                role="tab"
-                type="button"
-                className={`calendar-day-tab ${selectedDayTab === 'in-advance' ? 'active' : ''}`}
-                onClick={() => setSelectedDayTab('in-advance')}
-              >
-                In advance
-                {selectedDayOutsideRequests.length > 0 && (
-                  <span className="calendar-day-tab-count">{selectedDayOutsideRequests.length}</span>
-                )}
-              </button>
-            </div>
-            {selectedDayTab === 'checkin' ? (
-              selectedDayCheckIns.length > 0 ? (
-                <div className="calendar-day-list">
-                  {selectedDayCheckIns.map((record) => (
-                    <div className="calendar-day-record" key={record.id}>
-                      <div>
-                        <strong>{record.userName || 'User'}</strong>
-                        <span>
-                          {record.status || 'Checked in'}
-                          {' · '}
-                          {record.time}
-                          {record.checkOutTime ? ` - ${record.checkOutTime}` : ''}
-                        </span>
-                      </div>
-                      <output>{record.location || '-'}</output>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="calendar-day-empty">No check-in records</div>
-              )
-            ) : selectedDayTab === 'leave' ? (
-              selectedDayRequests.length > 0 ? (
-                <div className="calendar-day-list">
-                  {selectedDayRequests.map((request) => (
-                    <div className="calendar-day-record" key={request.id}>
-                      <div>
-                        <strong>{request.userName || 'User'}</strong>
-                        <span>
-                          {LEAVE_TYPE_THAI_LABEL[request.type] || 'N/A'}
-                          {request.time ? ` · ${request.time}` : ''}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="calendar-day-empty">No leave requests</div>
-              )
-            ) : selectedDayOutsideRequests.length > 0 ? (
-              <div className="calendar-day-list">
-                {selectedDayOutsideRequests.map((request) => {
-                  const subType = getOutsideSubType(request);
-                  const locationLabel =
-                    subType === 'Offsite'
-                      ? 'Offsite location'
-                      : subType === 'Other'
-                        ? 'Other details'
-                        : '';
-                  return (
-                    <div className="calendar-day-record" key={request.id}>
-                      <div>
-                        <strong>{request.userName || 'User'}</strong>
-                        {locationLabel ? (
-                          <span>
-                            {locationLabel}: {request.location || '-'}
-                          </span>
-                        ) : (
-                          <span>{subType}</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="calendar-day-empty">No in-advance requests</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {showLeaveQuotaPopup && (
-        <div className="leave-quota-overlay" onClick={() => setShowLeaveQuotaPopup(false)}>
-          <div className="leave-quota-popup" onClick={(event) => event.stopPropagation()}>
-            <div className="leave-quota-header">
-              <div>
-                <h3>Leave Quota</h3>
-                <p>{user.name}</p>
-              </div>
-              <button className="leave-quota-close" onClick={() => setShowLeaveQuotaPopup(false)} aria-label="Close leave quota">
-                <MdClose />
-              </button>
-            </div>
-            <div className="leave-quota-items">
-              {user.leaveQuotas.map((quota) => (
-                <div className="leave-quota-item" key={quota.type}>
-                  <div>
-                    <strong>{quota.type}</strong>
-                    <span>{quota.detail}</span>
-                  </div>
-                  <output>{quota.remaining}</output>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,14 +1,14 @@
 .record-container {
-  --up-bg: #dddddd;
-  --up-surface: #ffffff;
-  --up-ink: #1a1f2c;
-  --up-ink-2: #000000;
-  --up-ink-3: #9aa0ad;
-  --up-line: #000000;
-  --up-line-soft: #efece4;
-  --up-accent: #343434;
-  --up-accent-soft: #e3eaf6;
-  --up-accent-dark: #0d1f3e;
+  --up-bg: #F5F0E8;
+  --up-surface: #FFFFFF;
+  --up-ink: #1A1A1A;
+  --up-ink-2: #1A1A1A;
+  --up-ink-3: #8A8578;
+  --up-line: #E8E3D8;
+  --up-line-soft: #E8E3D8;
+  --up-accent: #C4895A;
+  --up-accent-soft: #F5E6D6;
+  --up-accent-dark: #A06D40;
   --up-font-thai: 'Sarabun','IBM Plex Sans Thai',system-ui,sans-serif;
   --up-font-sans: 'Inter Tight','IBM Plex Sans Thai',system-ui,sans-serif;
 

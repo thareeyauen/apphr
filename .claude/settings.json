@@ -12,7 +12,14 @@
       "Bash(findstr LISTENING)",
       "PowerShell($r = Invoke-WebRequest -Uri 'http://localhost:5173/src/User/Landing.jsx' -UseBasicParsing -TimeoutSec 5; $r.Content | Select-String -Pattern 'requestDateKeys|requests =|return .request.' | Select-Object -First 10)",
       "PowerShell($r = Invoke-WebRequest -Uri 'http://localhost:5173/src/App.jsx' -UseBasicParsing -TimeoutSec 5; \\($r.Content | Select-String -Pattern 'dateKey|requests=\\\\{'\\).Matches | Select-Object -First 10 -ExpandProperty Value)",
-      "Bash(curl -s http://localhost:5173/src/App.jsx)"
+      "Bash(curl -s http://localhost:5173/src/App.jsx)",
+      "Bash(npx --no-install eslint src/User/Landing.jsx --no-eslintrc --parser-options=ecmaVersion:2022,sourceType:module,ecmaFeatures:{jsx:true})",
+      "Bash(node -e \"const fs=require\\('fs'\\); const src=fs.readFileSync\\('src/User/Landing.jsx','utf8'\\); console.log\\('lines:', src.split\\('\\\\\\\\n'\\).length\\); console.log\\('chars:', src.length\\);\")",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(taskkill /f /im node.exe)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force)"
     ]
   }
 }
