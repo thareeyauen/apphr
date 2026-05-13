@@ -278,6 +278,7 @@ function App() {
     return (
       <Record
         records={currentUserRecords}
+        currentUser={currentUser}
         onDeleteRecord={deleteCheckInRecord}
         onGoHome={() => navigate('/home')}
         onGoAccount={() => navigate('/account')}
@@ -313,6 +314,8 @@ function App() {
     return (
       <Leave
         onSubmitRequest={createRequestRecord}
+        currentUser={currentUser}
+        requests={currentUserRequests}
         onGoBack={() => navigate('/request')}
         onGoHome={() => navigate('/home')}
         onGoRecord={() => navigate('/record')}
@@ -327,6 +330,7 @@ function App() {
     return (
       <Overtime
         onSubmitRequest={createRequestRecord}
+        currentUser={currentUser}
         onGoBack={() => navigate('/request')}
         onGoHome={() => navigate('/home')}
         onGoRecord={() => navigate('/record')}
@@ -341,6 +345,7 @@ function App() {
     return (
       <Outside
         onSubmitRequest={createRequestRecord}
+        currentUser={currentUser}
         onGoBack={() => navigate('/request')}
         onGoHome={() => navigate('/home')}
         onGoRecord={() => navigate('/record')}
@@ -355,6 +360,7 @@ function App() {
     return (
       <Requestdoc
         onSubmitRequest={createRequestRecord}
+        currentUser={currentUser}
         onGoBack={() => navigate('/request')}
         onGoHome={() => navigate('/home')}
         onGoRecord={() => navigate('/record')}

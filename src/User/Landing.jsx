@@ -41,10 +41,7 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
   const [showCheckInPopup, setShowCheckInPopup] = useState(false);
   const [selectedCheckInLocation, setSelectedCheckInLocation] = useState('');
   const [offsiteAddress, setOffsiteAddress] = useState('');
-  const [backdateTarget, setBackdateTarget] = useState(null);
   const [popupMode, setPopupMode] = useState('checkin');
-  const [checkOutTarget, setCheckOutTarget] = useState(null);
-  const [manualCheckOutTime, setManualCheckOutTime] = useState('17:00');
   const [checkInNote, setCheckInNote] = useState('');
   const [checkInRecords, setCheckInRecords] = useState(() => {
     const savedRecords = localStorage.getItem(CHECK_IN_RECORDS_KEY);
@@ -155,82 +152,6 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
   ];
 
   const todayKey = getDateKey(today);
-  const userCheckInDateKeys = new Set(
-    userCheckInRecords.map((record) => record.dateKey).filter(Boolean)
-  );
-  const expandRequestDateKeys = (request) => {
-    const startKey = request.startDateKey || request.dateKey;
-    const endKey = request.endDateKey || startKey;
-    if (!startKey) return [];
-    const start = new Date(`${startKey}T00:00:00`);
-    const end = new Date(`${endKey}T00:00:00`);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) {
-      return [startKey];
-    }
-    const keys = [];
-    const cursor = new Date(start);
-    while (cursor <= end) {
-      const y = cursor.getFullYear();
-      const m = String(cursor.getMonth() + 1).padStart(2, '0');
-      const d = String(cursor.getDate()).padStart(2, '0');
-      keys.push(`${y}-${m}-${d}`);
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    return keys;
-  };
-  const requestDateKeys = new Set(
-    requests
-      .filter((request) => request.type !== 'Request Documents')
-      .flatMap(expandRequestDateKeys)
-  );
-  const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
-
-  const formatDateLabel = (date) =>
-    date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
-
-  const dateFromKey = (dateKey) => {
-    const [y, m, d] = dateKey.split('-').map(Number);
-    return new Date(y, m - 1, d);
-  };
-
-  const notCheckedInDays = (() => {
-    const items = [];
-    const startOfYear = new Date(today.getFullYear(), 0, 1);
-    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
-    const cursor = new Date(startOfYear);
-    while (cursor <= yesterday) {
-      if (!isWeekend(cursor)) {
-        const cursorKey = getDateKey(cursor);
-        if (!userCheckInDateKeys.has(cursorKey) && !requestDateKeys.has(cursorKey)) {
-          items.push({
-            kind: 'absent',
-            dateKey: cursorKey,
-            label: formatDateLabel(cursor)
-          });
-        }
-      }
-      cursor.setDate(cursor.getDate() + 1);
-    }
-    return items;
-  })();
-
-  const forgotCheckOutItems = userCheckInRecords
-    .filter((record) => record.dateKey && record.dateKey < todayKey && !record.checkOutTime)
-    .map((record) => ({
-      kind: 'forgot-checkout',
-      dateKey: record.dateKey,
-      label: formatDateLabel(dateFromKey(record.dateKey)),
-      record
-    }));
-
-  const pendingItems = [...notCheckedInDays, ...forgotCheckOutItems].sort((a, b) =>
-    a.dateKey < b.dateKey ? 1 : a.dateKey > b.dateKey ? -1 : 0
-  );
 
   const todayCheckIn = userCheckInRecords.find((record) => record.dateKey === todayKey);
 
@@ -242,12 +163,32 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     return { label: 'นอกสำนักงาน', tone: 'offsite' };
   };
 
-  const selfNickname = user.nickname || 'เพ้นท์';
-  const selfRole = user.role || user.position || 'Junior Analyst';
+  const isExemptFromCheckIn =
+    user?.profile?.job?.employeeLevel === 'Board Level' ||
+    user?.profile?.job?.employeeLevel === 'Director Level';
+
+  const selfNickname = user?.profile?.user?.nicknameTh || user.nickname || 'เพ้นท์';
+  const selfRole = user?.position || user?.profile?.job?.roleTh || 'Junior Analyst';
   const selfInitial = (selfNickname || user.name || '?').trim().charAt(0).toUpperCase();
-  const selfStatus = todayCheckIn?.checkOutTime
-    ? { label: 'เช็คเอาท์แล้ว', tone: 'done' }
-    : getStatusInfo(todayCheckIn?.location);
+  const LEAVE_LABEL = {
+    'Annual Leave': 'ลาพักร้อน',
+    'Sick Leave': 'ลาป่วย',
+    'Personal Leave': 'ลากิจ',
+    'Maternity Leave': 'ลาคลอด'
+  };
+  const todayApprovedLeave = requests.find((req) => {
+    if (req.status !== 'approved') return false;
+    if (!LEAVE_LABEL[req.type]) return false;
+    if (userOwnerKey && getRecordOwnerKey(req) !== userOwnerKey) return false;
+    const startKey = req.startDateKey || req.dateKey;
+    const endKey = req.endDateKey || startKey;
+    return startKey && todayKey >= startKey && todayKey <= endKey;
+  });
+  const selfStatus = todayApprovedLeave
+    ? { label: LEAVE_LABEL[todayApprovedLeave.type], tone: 'leave' }
+    : todayCheckIn?.checkOutTime
+      ? { label: 'เช็คเอาท์แล้ว', tone: 'done' }
+      : getStatusInfo(todayCheckIn?.location);
 
   const teamMembers = [
     {
@@ -304,9 +245,6 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     setShowCheckInPopup(false);
     setSelectedCheckInLocation('');
     setOffsiteAddress('');
-    setBackdateTarget(null);
-    setCheckOutTarget(null);
-    setManualCheckOutTime('17:00');
     setCheckInNote('');
     setPopupMode('checkin');
   };
@@ -320,38 +258,15 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     setShowCheckInPopup(true);
   };
 
-  const openManualCheckOut = (record) => {
-    setCheckOutTarget(record);
-    setManualCheckOutTime('17:00');
-    setPopupMode('manual-checkout');
-    setShowCheckInPopup(true);
-  };
-
-  const openBackdatedCheckIn = (day) => {
-    const [year, month, dayOfMonth] = day.dateKey.split('-').map(Number);
-    const targetDate = new Date(year, month - 1, dayOfMonth, 9, 0, 0);
-    setBackdateTarget({ ...day, date: targetDate });
-    setSelectedCheckInLocation('');
-    setOffsiteAddress('');
-    setCheckInNote('');
-    setPopupMode('checkin');
-    setShowCheckInPopup(true);
-  };
-
   const formatTime = (date) =>
     date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
   const handleSubmitCheckIn = () => {
-    const checkedInAt = backdateTarget?.date || new Date();
+    const checkedInAt = new Date();
     const location =
       selectedCheckInLocation === 'Offsite'
         ? offsiteAddress.trim()
         : selectedCheckInLocation;
-
-    const isBackdated = Boolean(backdateTarget);
-    const autoCheckOutAt = isBackdated
-      ? new Date(checkedInAt.getFullYear(), checkedInAt.getMonth(), checkedInAt.getDate(), 17, 0, 0)
-      : null;
 
     setCheckInRecords((currentRecords) => [
       {
@@ -363,8 +278,7 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
           year: 'numeric'
         }),
         time: formatTime(checkedInAt),
-        checkOutTime: autoCheckOutAt ? formatTime(autoCheckOutAt) : undefined,
-        status: autoCheckOutAt ? 'Checked out' : 'Checked in',
+        status: 'Checked in',
         ownerKey: userOwnerKey,
         employeeId: user.employeeId,
         userId: user.userType,
@@ -381,34 +295,15 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
   };
 
   const handleSubmitCheckOut = () => {
-    if (popupMode === 'manual-checkout') {
-      if (!checkOutTarget || !manualCheckOutTime) return;
-      setCheckInRecords((currentRecords) =>
-        currentRecords.map((record) =>
-          record.id === checkOutTarget.id
-            ? {
-                ...record,
-                checkOutTime: manualCheckOutTime,
-                status: 'Checked out'
-              }
-            : record
-        )
-      );
-    } else {
-      if (!activeCheckIn) return;
-      const checkedOutAt = new Date();
-      setCheckInRecords((currentRecords) =>
-        currentRecords.map((record) =>
-          record.id === activeCheckIn.id
-            ? {
-                ...record,
-                checkOutTime: formatTime(checkedOutAt),
-                status: 'Checked out'
-              }
-            : record
-        )
-      );
-    }
+    if (!activeCheckIn) return;
+    const checkedOutAt = new Date();
+    setCheckInRecords((currentRecords) =>
+      currentRecords.map((record) =>
+        record.id === activeCheckIn.id
+          ? { ...record, checkOutTime: formatTime(checkedOutAt), status: 'Checked out' }
+          : record
+      )
+    );
     closeCheckInPopup();
   };
 
@@ -489,7 +384,7 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
                 {userInitials}
               </div>
               <div className="welcome-card__info">
-                <h2 className="welcome-card__name">{user.name}</h2>
+                <h2 className="welcome-card__name">{user?.profile?.user?.nameTh || user.name}</h2>
                 <p className="welcome-card__type">{user.userTypeLabel}</p>
               </div>
             </div>
@@ -527,14 +422,16 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
               </dl>
             </div>
           ) : (
-            <div className="dashboard-today dashboard-today--out">
-              <div className="dashboard-today-status">
-                <MdWarningAmber />
-                <strong>ยังไม่ได้เช็คอินวันนี้</strong>
+            !isExemptFromCheckIn && (
+              <div className="dashboard-today dashboard-today--out">
+                <div className="dashboard-today-status">
+                  <MdWarningAmber />
+                  <strong>ยังไม่ได้เช็คอินวันนี้</strong>
+                </div>
               </div>
-            </div>
+            )
           )}
-          {!todayCheckIn?.checkOutTime && (
+          {!isExemptFromCheckIn && !todayCheckIn?.checkOutTime && (
             <button
               type="button"
               className={`dashboard-primary-btn ${activeCheckIn ? 'dashboard-primary-btn--out' : 'dashboard-primary-btn--in'}`}
@@ -608,19 +505,22 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
         <button className="nav-item active">
           <span className="nav-icon"><MdHome /></span>
           <span className="nav-label">Home</span>
-          <span className="nav-badge">9</span>
         </button>
-        <button className="nav-item" onClick={onGoRecord || (() => setActivePage('record'))}>
-          <span className="nav-icon"><MdAccessTime /></span>
-          <span className="nav-label">Record</span>
-        </button>
-        <button
-          className="nav-item center"
-          onClick={openCheckInPopup}
-          aria-label={activeCheckIn ? 'Open check out' : 'Open check in'}
-        >
-          <span className="nav-icon large"><MdSchedule /></span>
-        </button>
+        {!isExemptFromCheckIn && (
+          <button className="nav-item" onClick={onGoRecord || (() => setActivePage('record'))}>
+            <span className="nav-icon"><MdAccessTime /></span>
+            <span className="nav-label">Record</span>
+          </button>
+        )}
+        {!isExemptFromCheckIn && (
+          <button
+            className="nav-item center"
+            onClick={openCheckInPopup}
+            aria-label={activeCheckIn ? 'Open check out' : 'Open check in'}
+          >
+            <span className="nav-icon large"><MdSchedule /></span>
+          </button>
+        )}
         <button className="nav-item" onClick={onGoRequest || (() => setActivePage('request'))}>
           <span className="nav-icon"><MdAssignment /></span>
           <span className="nav-label">Requests</span>
@@ -637,52 +537,14 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
             <div className="checkin-header">
               <div>
                 <h3>
-                  {popupMode === 'checkout' || popupMode === 'manual-checkout'
-                    ? 'CHECK OUT?'
-                    : 'WHERE ARE YOU WORKING?'}
+                  {popupMode === 'checkout' ? 'CHECK OUT?' : 'WHERE ARE YOU WORKING?'}
                 </h3>
-                {backdateTarget && (
-                  <p className="checkin-backdate-label">Check in for {backdateTarget.label}</p>
-                )}
-                {popupMode === 'manual-checkout' && checkOutTarget && (
-                  <p className="checkin-backdate-label">
-                    Check out for {formatDateLabel(dateFromKey(checkOutTarget.dateKey))}
-                  </p>
-                )}
               </div>
               <button className="checkin-close" onClick={closeCheckInPopup} aria-label="Close">
                 <MdClose />
               </button>
             </div>
-            {popupMode === 'manual-checkout' ? (
-              <>
-                <div className="checkout-summary">
-                  <div className="checkout-summary-row">
-                    <span className="checkout-summary-key">Location</span>
-                    <span className="checkout-summary-val">{checkOutTarget?.location || '-'}</span>
-                  </div>
-                  <div className="checkout-summary-row">
-                    <span className="checkout-summary-key">Check in</span>
-                    <span className="checkout-summary-val">{checkOutTarget?.time || '-'}</span>
-                  </div>
-                </div>
-                <label className="manual-checkout-field">
-                  <span>Check out time</span>
-                  <input
-                    type="time"
-                    value={manualCheckOutTime}
-                    onChange={(event) => setManualCheckOutTime(event.target.value)}
-                  />
-                </label>
-                <button
-                  className="checkin-submit"
-                  disabled={!manualCheckOutTime}
-                  onClick={handleSubmitCheckOut}
-                >
-                  Save check out time
-                </button>
-              </>
-            ) : popupMode === 'checkout' ? (
+            {popupMode === 'checkout' ? (
               <>
                 <div className="checkout-summary">
                   <div className="checkout-summary-row">

@@ -71,6 +71,7 @@
 }
 
 .request-stats-tab {
+  position: relative;
   border: none;
   border-radius: 7px;
   background: transparent;
@@ -81,6 +82,23 @@
   font-size: 13px;
   font-weight: 500;
   transition: background 0.15s ease, color 0.15s ease;
+}
+
+.request-tab-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  background: #E53935;
+  color: #fff;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  pointer-events: none;
 }
 
 .request-stats-tab:hover {

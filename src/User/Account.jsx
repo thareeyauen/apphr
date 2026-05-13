@@ -16,7 +16,11 @@ import {
   MdEdit,
   MdLogout,
   MdSave,
-  MdSchedule
+  MdSchedule,
+  MdLock,
+  MdClose,
+  MdVisibility,
+  MdVisibilityOff
 } from 'react-icons/md';
 import './Account.css';
 
@@ -457,7 +461,17 @@ export default function Account({
   const narrow = useNarrow(ref, 760);
   const [active, setActive] = useState(initialTab);
   const [generalDraft, setGeneralDraft] = useState(null);
+  const [showPasswordPopup, setShowPasswordPopup] = useState(false);
+  const [pwCurrent, setPwCurrent] = useState('');
+  const [pwNew, setPwNew] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [showPwCurrent, setShowPwCurrent] = useState(false);
+  const [showPwNew, setShowPwNew] = useState(false);
+  const [showPwConfirm, setShowPwConfirm] = useState(false);
   const profile = user?.profile || {};
+  const isExemptFromCheckIn = user?.profile?.job?.employeeLevel === 'Board Level' || user?.profile?.job?.employeeLevel === 'Director Level';
 
   const data = {
     ...DEFAULT_PROFILE,
@@ -529,6 +543,25 @@ export default function Account({
     setGeneralDraft(null);
   };
 
+  const openPasswordPopup = () => {
+    setPwCurrent(''); setPwNew(''); setPwConfirm('');
+    setPwError(''); setPwSuccess(false);
+    setShowPwCurrent(false); setShowPwNew(false); setShowPwConfirm(false);
+    setShowPasswordPopup(true);
+  };
+
+  const closePasswordPopup = () => setShowPasswordPopup(false);
+
+  const handleResetPassword = () => {
+    if (!pwCurrent) { setPwError('กรุณากรอกรหัสผ่านปัจจุบัน'); return; }
+    if (pwCurrent !== user?.password) { setPwError('รหัสผ่านปัจจุบันไม่ถูกต้อง'); return; }
+    if (pwNew.length < 8) { setPwError('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร'); return; }
+    if (pwNew !== pwConfirm) { setPwError('ยืนยันรหัสผ่านใหม่ไม่ตรงกัน'); return; }
+    onUpdateUser?.({ password: pwNew });
+    setPwSuccess(true);
+    setTimeout(closePasswordPopup, 1500);
+  };
+
   return (
     <div ref={ref} className={'up-root' + (narrow ? ' is-narrow' : '')}>
       <div className="up-header">
@@ -560,6 +593,10 @@ export default function Account({
               </button>
             )
           )}
+          <button className="up-btn" type="button" onClick={openPasswordPopup}>
+            <MdLock />
+            Reset Password
+          </button>
           {onMessage && (
             <button className="up-btn" onClick={onMessage}>ส่งข้อความ</button>
           )}
@@ -608,18 +645,96 @@ export default function Account({
         </div>
       </div>
 
+      {showPasswordPopup && (
+        <div className="up-modal-overlay" onClick={closePasswordPopup}>
+          <div className="up-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="up-modal-header">
+              <h3>เปลี่ยนรหัสผ่าน</h3>
+              <button className="up-modal-close" type="button" onClick={closePasswordPopup} aria-label="Close">
+                <MdClose />
+              </button>
+            </div>
+            <div className="up-modal-body">
+              {pwSuccess ? (
+                <p className="up-modal-success">เปลี่ยนรหัสผ่านสำเร็จ</p>
+              ) : (
+                <>
+                  <label className="up-pw-field">
+                    <span>รหัสผ่านปัจจุบัน</span>
+                    <div className="up-pw-input-wrap">
+                      <input
+                        type={showPwCurrent ? 'text' : 'password'}
+                        value={pwCurrent}
+                        onChange={(e) => { setPwCurrent(e.target.value); setPwError(''); }}
+                        autoComplete="current-password"
+                        placeholder="รหัสผ่านปัจจุบัน"
+                      />
+                      <button type="button" className="up-pw-eye" onClick={() => setShowPwCurrent((v) => !v)}>
+                        {showPwCurrent ? <MdVisibilityOff /> : <MdVisibility />}
+                      </button>
+                    </div>
+                  </label>
+                  <label className="up-pw-field">
+                    <span>รหัสผ่านใหม่</span>
+                    <div className="up-pw-input-wrap">
+                      <input
+                        type={showPwNew ? 'text' : 'password'}
+                        value={pwNew}
+                        onChange={(e) => { setPwNew(e.target.value); setPwError(''); }}
+                        autoComplete="new-password"
+                        placeholder="อย่างน้อย 8 ตัวอักษร"
+                      />
+                      <button type="button" className="up-pw-eye" onClick={() => setShowPwNew((v) => !v)}>
+                        {showPwNew ? <MdVisibilityOff /> : <MdVisibility />}
+                      </button>
+                    </div>
+                  </label>
+                  <label className="up-pw-field">
+                    <span>ยืนยันรหัสผ่านใหม่</span>
+                    <div className="up-pw-input-wrap">
+                      <input
+                        type={showPwConfirm ? 'text' : 'password'}
+                        value={pwConfirm}
+                        onChange={(e) => { setPwConfirm(e.target.value); setPwError(''); }}
+                        autoComplete="new-password"
+                        placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
+                      />
+                      <button type="button" className="up-pw-eye" onClick={() => setShowPwConfirm((v) => !v)}>
+                        {showPwConfirm ? <MdVisibilityOff /> : <MdVisibility />}
+                      </button>
+                    </div>
+                  </label>
+                  {pwError && <p className="up-modal-error">{pwError}</p>}
+                  <button
+                    className="up-btn up-btn--primary up-modal-submit"
+                    type="button"
+                    onClick={handleResetPassword}
+                  >
+                    บันทึก
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bottom-nav">
         <button className="nav-item" onClick={onGoHome}>
           <span className="nav-icon"><MdHome /></span>
           <span className="nav-label">Home</span>
         </button>
-        <button className="nav-item" onClick={onGoRecord}>
-          <span className="nav-icon"><MdAccessTime /></span>
-          <span className="nav-label">Record</span>
-        </button>
-        <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
-          <span className="nav-icon large"><MdSchedule /></span>
-        </button>
+        {!isExemptFromCheckIn && (
+          <button className="nav-item" onClick={onGoRecord}>
+            <span className="nav-icon"><MdAccessTime /></span>
+            <span className="nav-label">Record</span>
+          </button>
+        )}
+        {!isExemptFromCheckIn && (
+          <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
+            <span className="nav-icon large"><MdSchedule /></span>
+          </button>
+        )}
         <button className="nav-item" onClick={onGoRequest}>
           <span className="nav-icon"><MdAssignment /></span>
           <span className="nav-label">Requests</span>

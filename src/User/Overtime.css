@@ -1,3 +1,68 @@
+.ot-unavail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+}
+
+.ot-unavail-modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 36px 28px 28px;
+  width: min(340px, 90vw);
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+.ot-unavail-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: #FDF5EE;
+  color: #C4895A;
+  font-size: 28px;
+}
+
+.ot-unavail-modal h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1A1A1A;
+}
+
+.ot-unavail-modal p {
+  margin: 0 0 24px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #6B6560;
+}
+
+.ot-unavail-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #C4895A;
+  color: #fff;
+  font-family: 'Sarabun', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ot-unavail-btn:hover {
+  background: #A06D40;
+}
+
 .ot-page {
   --up-bg: #F5F0E8;
   --up-surface: #FFFFFF;

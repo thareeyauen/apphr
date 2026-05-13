@@ -5,6 +5,7 @@ import {
   MdArrowBack,
   MdCalendarToday,
   MdHome,
+  MdHourglassEmpty,
   MdPerson,
   MdSchedule,
   MdSend,
@@ -97,6 +98,7 @@ const calculateHours = (startTime, endTime) => {
 
 export default function Overtime({
   onSubmitRequest,
+  currentUser,
   onGoBack,
   onGoHome,
   onGoRecord,
@@ -104,6 +106,8 @@ export default function Overtime({
   onGoAccount,
   onOpenCheckIn
 }) {
+  const isExemptFromCheckIn = currentUser?.profile?.job?.employeeLevel === 'Board Level' || currentUser?.profile?.job?.employeeLevel === 'Director Level';
+  const [unavailableOpen] = useState(true);
   const today = getDateKey(new Date());
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
@@ -136,6 +140,19 @@ export default function Overtime({
 
   return (
     <div className="ot-page">
+      {unavailableOpen && (
+        <div className="ot-unavail-overlay">
+          <div className="ot-unavail-modal">
+            <span className="ot-unavail-icon"><MdHourglassEmpty /></span>
+            <h2>ยังไม่เปิดใช้งาน</h2>
+            <p>ฟังก์ชันคำขอทำงานล่วงเวลายังไม่พร้อมให้บริการในขณะนี้<br />กรุณาติดต่อฝ่าย HR เพื่อข้อมูลเพิ่มเติม</p>
+            <button className="ot-unavail-btn" onClick={onGoBack}>
+              ย้อนกลับ
+            </button>
+          </div>
+        </div>
+      )}
+
       <header className="ot-header">
         <button type="button" className="ot-back" onClick={onGoBack} aria-label="Back to requests">
           <MdArrowBack />
@@ -254,13 +271,17 @@ export default function Overtime({
           <span className="nav-icon"><MdHome /></span>
           <span className="nav-label">Home</span>
         </button>
-        <button className="nav-item" onClick={onGoRecord}>
-          <span className="nav-icon"><MdAccessTime /></span>
-          <span className="nav-label">Record</span>
-        </button>
-        <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
-          <span className="nav-icon large"><MdSchedule /></span>
-        </button>
+        {!isExemptFromCheckIn && (
+          <button className="nav-item" onClick={onGoRecord}>
+            <span className="nav-icon"><MdAccessTime /></span>
+            <span className="nav-label">Record</span>
+          </button>
+        )}
+        {!isExemptFromCheckIn && (
+          <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
+            <span className="nav-icon large"><MdSchedule /></span>
+          </button>
+        )}
         <button className="nav-item active" onClick={onGoRequest}>
           <span className="nav-icon"><MdAssignment /></span>
           <span className="nav-label">Requests</span>

@@ -1261,19 +1261,20 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0;
-  background: transparent;
-  color: #8A8578;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 5px 11px;
+  background: #FDF5EE;
+  border: 1px solid #F0DCC8;
+  border-radius: 20px;
+  color: #7A5030;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: 0.02em;
-  box-shadow: none;
   white-space: nowrap;
   margin-top: 4px;
 }
 
 .welcome-card__date svg {
-  font-size: 14px;
+  font-size: 15px;
   color: #C4895A;
 }
 

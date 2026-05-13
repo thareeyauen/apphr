@@ -372,3 +372,128 @@
 .up-root.is-narrow .up-row--doc       { grid-template-columns: 32px 1fr auto; }
 .up-root.is-narrow .up-row--doc       .up-doc-meta,
 .up-root.is-narrow .up-row--doc       .up-doc-date { display: none; }
+
+/* ─── Password Modal ───────────────────────────────────────────── */
+.up-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.up-modal {
+  background: var(--up-surface);
+  border-radius: var(--up-r-lg);
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+.up-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 0;
+}
+
+.up-modal-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--up-ink);
+  margin: 0;
+}
+
+.up-modal-close {
+  background: transparent;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--up-ink-3);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  border-radius: var(--up-r-sm);
+}
+.up-modal-close:hover { background: var(--up-line); }
+
+.up-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.up-pw-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--up-ink-3);
+}
+
+.up-pw-input-wrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--up-line);
+  border-radius: var(--up-r-sm);
+  background: var(--up-bg);
+  overflow: hidden;
+}
+.up-pw-input-wrap:focus-within {
+  border-color: var(--up-accent);
+  outline: 2px solid var(--up-accent-soft);
+}
+
+.up-pw-input-wrap input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--up-ink);
+  font-family: var(--up-font-thai);
+  outline: none;
+}
+
+.up-pw-eye {
+  background: transparent;
+  border: none;
+  padding: 0 10px;
+  cursor: pointer;
+  color: var(--up-ink-3);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+}
+.up-pw-eye:hover { color: var(--up-ink); }
+
+.up-modal-error {
+  font-size: 13px;
+  color: #c0392b;
+  margin: 0;
+  padding: 8px 12px;
+  background: #fdf2f2;
+  border-radius: var(--up-r-sm);
+  border: 1px solid #f5c6c6;
+}
+
+.up-modal-success {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--up-good);
+  text-align: center;
+  padding: 16px 0;
+}
+
+.up-modal-submit {
+  width: 100%;
+  justify-content: center;
+  padding: 11px;
+  font-size: 14px;
+  margin-top: 4px;
+}

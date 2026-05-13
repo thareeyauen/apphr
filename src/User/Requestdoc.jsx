@@ -27,6 +27,7 @@ const LANGUAGE_OPTIONS = [
 
 export default function Requestdoc({
   onSubmitRequest,
+  currentUser,
   onGoBack,
   onGoHome,
   onGoRecord,
@@ -34,6 +35,7 @@ export default function Requestdoc({
   onGoAccount,
   onOpenCheckIn
 }) {
+  const isExemptFromCheckIn = currentUser?.profile?.job?.employeeLevel === 'Board Level' || currentUser?.profile?.job?.employeeLevel === 'Director Level';
   const [documentType, setDocumentType] = useState(DOCUMENT_TYPES[0].id);
   const [language, setLanguage] = useState(LANGUAGE_OPTIONS[0].id);
   const [note, setNote] = useState('');
@@ -146,13 +148,17 @@ export default function Requestdoc({
           <span className="nav-icon"><MdHome /></span>
           <span className="nav-label">Home</span>
         </button>
-        <button className="nav-item" onClick={onGoRecord}>
-          <span className="nav-icon"><MdAccessTime /></span>
-          <span className="nav-label">Record</span>
-        </button>
-        <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
-          <span className="nav-icon large"><MdSchedule /></span>
-        </button>
+        {!isExemptFromCheckIn && (
+          <button className="nav-item" onClick={onGoRecord}>
+            <span className="nav-icon"><MdAccessTime /></span>
+            <span className="nav-label">Record</span>
+          </button>
+        )}
+        {!isExemptFromCheckIn && (
+          <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
+            <span className="nav-icon large"><MdSchedule /></span>
+          </button>
+        )}
         <button className="nav-item active" onClick={onGoRequest}>
           <span className="nav-icon"><MdAssignment /></span>
           <span className="nav-label">Requests</span>

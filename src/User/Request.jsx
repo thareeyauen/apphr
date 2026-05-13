@@ -116,6 +116,7 @@ export default function Request({
   const canApprove = APPROVER_LEVELS.includes(
     currentUser?.profile?.job?.employeeLevel
   );
+  const isExemptFromCheckIn = currentUser?.profile?.job?.employeeLevel === 'Board Level' || currentUser?.profile?.job?.employeeLevel === 'Director Level';
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [showCreateMenu, setShowCreateMenu] = useState(false);
@@ -149,6 +150,11 @@ export default function Request({
     return data.filter((r) => !isOwnedByCurrentUser(r));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, canApprove, userOwnerKey]);
+
+  const pendingApproveCount = useMemo(
+    () => approveData.filter((r) => r.status === 'pending').length,
+    [approveData]
+  );
 
   const statsSource =
     canApprove && statsView === "approve" ? approveData : myData;
@@ -366,6 +372,9 @@ export default function Request({
             onClick={() => setStatsView("approve")}
           >
             Requests for Review
+            {pendingApproveCount > 0 && (
+              <span className="request-tab-badge">{pendingApproveCount}</span>
+            )}
           </button>
         </div>
       )}
@@ -628,13 +637,17 @@ export default function Request({
           <span className="nav-icon"><MdHome /></span>
           <span className="nav-label">Home</span>
         </button>
-        <button className="nav-item" onClick={onGoRecord}>
-          <span className="nav-icon"><MdAccessTime /></span>
-          <span className="nav-label">Record</span>
-        </button>
-        <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
-          <span className="nav-icon large"><MdSchedule /></span>
-        </button>
+        {!isExemptFromCheckIn && (
+          <button className="nav-item" onClick={onGoRecord}>
+            <span className="nav-icon"><MdAccessTime /></span>
+            <span className="nav-label">Record</span>
+          </button>
+        )}
+        {!isExemptFromCheckIn && (
+          <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
+            <span className="nav-icon large"><MdSchedule /></span>
+          </button>
+        )}
         <button className="nav-item active">
           <span className="nav-icon"><MdAssignment /></span>
           <span className="nav-label">Requests</span>

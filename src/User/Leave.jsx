@@ -47,6 +47,8 @@ const formatInputDate = (dateValue) => {
 
 export default function Leave({
   onSubmitRequest,
+  currentUser,
+  requests = [],
   onGoBack,
   onGoHome,
   onGoRecord,
@@ -54,6 +56,8 @@ export default function Leave({
   onGoAccount,
   onOpenCheckIn
 }) {
+  const isExemptFromCheckIn = currentUser?.profile?.job?.employeeLevel === 'Board Level' || currentUser?.profile?.job?.employeeLevel === 'Director Level';
+  const userOwnerKey = currentUser?.employeeId || currentUser?.email || currentUser?.userType || '';
   const today = new Date().toISOString().slice(0, 10);
   const [leaveType, setLeaveType] = useState(LEAVE_TYPES[0].id);
   const [startDate, setStartDate] = useState(today);
@@ -66,6 +70,26 @@ export default function Leave({
   const selectedLeave = LEAVE_TYPES.find((type) => type.id === leaveType) || LEAVE_TYPES[0];
   const selectedDayType = DAY_TYPES.find((type) => type.id === dayType) || DAY_TYPES[0];
 
+  const usedDaysByType = useMemo(() => {
+    if (!requests.length || !userOwnerKey) return {};
+    return requests.reduce((acc, req) => {
+      if (req.status !== 'approved') return acc;
+      const reqKey = req?.ownerKey || req?.employeeId || req?.email || req?.userId || '';
+      if (reqKey !== userOwnerKey) return acc;
+      const lt = LEAVE_TYPES.find((t) => t.label === req.type);
+      if (!lt) return acc;
+      const days = req.days ?? getDateDiffInclusive(req.startDateKey, req.endDateKey);
+      acc[lt.id] = (acc[lt.id] || 0) + days;
+      return acc;
+    }, {});
+  }, [requests, userOwnerKey]);
+
+  const getActualRemaining = (leaveTypeId) => {
+    const lt = LEAVE_TYPES.find((t) => t.id === leaveTypeId);
+    if (!lt) return 0;
+    return Math.max(lt.remaining - (usedDaysByType[leaveTypeId] || 0), 0);
+  };
+
   const requestedDays = useMemo(() => {
     const dateCount = getDateDiffInclusive(startDate, endDate);
     if (!dateCount) return 0;
@@ -73,7 +97,7 @@ export default function Leave({
     return dateCount * selectedDayType.multiplier;
   }, [startDate, endDate, selectedDayType]);
 
-  const remainingAfterRequest = Math.max(selectedLeave.remaining - requestedDays, 0);
+  const remainingAfterRequest = Math.max(getActualRemaining(selectedLeave.id) - requestedDays, 0);
   const canSubmit = requestedDays > 0 && reason.trim().length > 0;
 
   const handleSubmit = (event) => {
@@ -88,6 +112,7 @@ export default function Leave({
       detail: `${formatInputDate(startDate)} - ${formatInputDate(endDate)} (${requestedDays} วัน) · ${selectedDayType.label} · ${reason.trim()}`,
       startDateKey: startDate,
       endDateKey: endDate,
+      days: requestedDays,
       time: timeLabel
     });
     onGoRequest?.();
@@ -110,19 +135,19 @@ export default function Leave({
         <section className="leave-card">
           <div className="leave-card-head">
             <h2>Leave Type</h2>
-            <span>{selectedLeave.remaining} days left</span>
+            <span>{getActualRemaining(selectedLeave.id)} days left</span>
           </div>
           <label className="leave-field leave-type-select">
             <span>ประเภทการลา</span>
             <select value={leaveType} onChange={(event) => setLeaveType(event.target.value)}>
               {LEAVE_TYPES.map((type) => (
                 <option key={type.id} value={type.id}>
-                  {type.label} - {type.detail} ({type.remaining} วันคงเหลือ)
+                  {type.label} - {type.detail} ({getActualRemaining(type.id)} วันคงเหลือ)
                 </option>
               ))}
             </select>
             <small>
-              {selectedLeave.detail} · คงเหลือ {selectedLeave.remaining} วัน
+              {selectedLeave.detail} · คงเหลือ {getActualRemaining(selectedLeave.id)} วัน
             </small>
           </label>
         </section>
@@ -238,13 +263,17 @@ export default function Leave({
           <span className="nav-icon"><MdHome /></span>
           <span className="nav-label">Home</span>
         </button>
-        <button className="nav-item" onClick={onGoRecord}>
-          <span className="nav-icon"><MdAccessTime /></span>
-          <span className="nav-label">Record</span>
-        </button>
-        <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
-          <span className="nav-icon large"><MdSchedule /></span>
-        </button>
+        {!isExemptFromCheckIn && (
+          <button className="nav-item" onClick={onGoRecord}>
+            <span className="nav-icon"><MdAccessTime /></span>
+            <span className="nav-label">Record</span>
+          </button>
+        )}
+        {!isExemptFromCheckIn && (
+          <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
+            <span className="nav-icon large"><MdSchedule /></span>
+          </button>
+        )}
         <button className="nav-item active" onClick={onGoRequest}>
           <span className="nav-icon"><MdAssignment /></span>
           <span className="nav-label">Requests</span>

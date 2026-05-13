@@ -12,12 +12,14 @@ import './Record.css';
 
 export default function Record({
   records,
+  currentUser,
   onDeleteRecord,
   onGoHome,
   onGoRequest,
   onGoAccount,
   onOpenCheckIn
 }) {
+  const isExemptFromCheckIn = currentUser?.profile?.job?.employeeLevel === 'Board Level' || currentUser?.profile?.job?.employeeLevel === 'Director Level';
   return (
     <div className="record-container">
       <div className="record-header">
@@ -77,9 +79,11 @@ export default function Record({
           <span className="nav-icon"><MdAccessTime /></span>
           <span className="nav-label">Record</span>
         </button>
-        <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
-          <span className="nav-icon large"><MdSchedule /></span>
-        </button>
+        {!isExemptFromCheckIn && (
+          <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
+            <span className="nav-icon large"><MdSchedule /></span>
+          </button>
+        )}
         <button className="nav-item" onClick={onGoRequest}>
           <span className="nav-icon"><MdAssignment /></span>
           <span className="nav-label">Requests</span>
