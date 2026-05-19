@@ -7,9 +7,6 @@
   --up-line: #E8E3D8;
   --up-line-soft: #E8E3D8;
   --up-accent: #C4895A;
-  --up-font-thai: 'Sarabun','IBM Plex Sans Thai',system-ui,sans-serif;
-  --up-font-sans: 'Inter Tight','IBM Plex Sans Thai',system-ui,sans-serif;
-  --up-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   min-height: 100vh;
   box-sizing: border-box;

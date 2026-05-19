@@ -1,19 +1,15 @@
 import { useState, useMemo } from "react";
 import {
-  MdAccessTime,
-  MdAssignment,
   MdAttachMoney,
   MdBeachAccess,
   MdCheck,
   MdClose,
   MdDescription,
   MdDelete,
-  MdHome,
   MdHomeWork,
   MdMoreTime,
-  MdPerson,
-  MdSchedule,
 } from "react-icons/md";
+import BottomNav from "./Components/BottomNav";
 import "./Request.css";
 
 const REQUESTS = [
@@ -99,6 +95,9 @@ function StatusBadge({ status }) {
   );
 }
 
+const getSubmitterLabel = (request) =>
+  request.userName || request.employeeId || request.email || request.userId || '-';
+
 const APPROVER_LEVELS = ['Board Level', 'Director Level'];
 
 export default function Request({
@@ -112,11 +111,13 @@ export default function Request({
   onGoRecord,
   onGoAccount,
   onOpenCheckIn,
+  isCheckInDisabled = false,
 }) {
   const canApprove = APPROVER_LEVELS.includes(
     currentUser?.profile?.job?.employeeLevel
   );
-  const isExemptFromCheckIn = currentUser?.profile?.job?.employeeLevel === 'Board Level' || currentUser?.profile?.job?.employeeLevel === 'Director Level';
+  const isBoardLevel = currentUser?.profile?.job?.employeeLevel === 'Board Level';
+  const isExemptFromCheckIn = isCheckInDisabled || currentUser?.profile?.job?.employeeLevel === 'Board Level' || currentUser?.profile?.job?.employeeLevel === 'Director Level';
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [showCreateMenu, setShowCreateMenu] = useState(false);
@@ -157,7 +158,7 @@ export default function Request({
   );
 
   const statsSource =
-    canApprove && statsView === "approve" ? approveData : myData;
+    isBoardLevel || (canApprove && statsView === "approve") ? approveData : myData;
   const stats = useMemo(
     () => ({
       total: statsSource.length,
@@ -246,6 +247,7 @@ export default function Request({
     pageCount,
     onPageChange,
     emptyMessage,
+    showSubmitter = false,
     renderActions,
   }) => (
     <section className="request-table-block">
@@ -256,8 +258,9 @@ export default function Request({
         </span>
       </div>
       <section className="request-table" role="table">
-        <div className="request-table__head" role="row">
+        <div className={`request-table__head${showSubmitter ? ' request-table__head--review' : ''}`} role="row">
           <div role="columnheader">รหัสคำขอ</div>
+          {showSubmitter && <div role="columnheader">ผู้ส่ง</div>}
           <div role="columnheader">ประเภท / รายละเอียด</div>
           <div role="columnheader">วันที่ส่ง</div>
           <div role="columnheader">ผู้อนุมัติ</div>
@@ -269,8 +272,14 @@ export default function Request({
           <div className="request-empty">{emptyMessage}</div>
         ) : (
           rows.map((r) => (
-            <div className="request-row" role="row" key={r.id}>
+            <div className={`request-row${showSubmitter ? ' request-row--review' : ''}`} role="row" key={r.id}>
               <div className="request-row__id">{r.id}</div>
+              {showSubmitter && (
+                <div className="request-row__submitter">
+                  <strong>{getSubmitterLabel(r)}</strong>
+                  {r.employeeId && r.userName && <span>{r.employeeId}</span>}
+                </div>
+              )}
               <div className="request-row__type">
                 <div className="request-row__type-name">{r.type}</div>
                 <div className="request-row__type-detail">{r.detail}</div>
@@ -335,21 +344,25 @@ export default function Request({
     <div className="request-page">
       <header className="request-header">
         <div>
-          <h1 className="request-title">คำขอของฉัน</h1>
+          <h1 className="request-title">{isBoardLevel ? 'คำขอที่ต้องรีวิว' : 'คำขอของฉัน'}</h1>
           <p className="request-subtitle">
-            ประวัติคำขอทั้งหมดที่คุณเคยส่ง พร้อมสถานะล่าสุด
+            {isBoardLevel
+              ? 'ตรวจสอบและอนุมัติคำขอจากทีมต่างๆ ขององค์กร'
+              : 'ประวัติคำขอทั้งหมดที่คุณเคยส่ง พร้อมสถานะล่าสุด'}
           </p>
         </div>
-        <button
-          type="button"
-          className="request-btn request-btn--primary"
-          onClick={handleCreate}
-        >
-          + สร้างคำขอใหม่
-        </button>
+        {!isBoardLevel && (
+          <button
+            type="button"
+            className="request-btn request-btn--primary"
+            onClick={handleCreate}
+          >
+            + สร้างคำขอใหม่
+          </button>
+        )}
       </header>
 
-      {canApprove && (
+      {canApprove && !isBoardLevel && (
         <div className="request-stats-tabs" role="tablist">
           <button
             type="button"
@@ -436,7 +449,7 @@ export default function Request({
         </div>
       </section>
 
-      {renderRequestTable({
+      {!isBoardLevel && renderRequestTable({
         title: "My Requests",
         rows: visibleMine,
         totalCount: filteredMine.length,
@@ -444,17 +457,18 @@ export default function Request({
         pageCount: minePageCount,
         onPageChange: setMinePage,
         emptyMessage: "ไม่พบรายการคำขอที่ตรงกับเงื่อนไข",
-        renderActions: (r) => (
-          <button
-            type="button"
-            className="request-delete"
-            onClick={() => setRequestToDelete(r)}
-            aria-label={`Delete request ${r.id}`}
-            title="Delete request"
-          >
-            <MdDelete />
-          </button>
-        ),
+        renderActions: (r) =>
+          r.status === "approved" ? null : (
+            <button
+              type="button"
+              className="request-delete"
+              onClick={() => setRequestToDelete(r)}
+              aria-label={`Delete request ${r.id}`}
+              title="Delete request"
+            >
+              <MdDelete />
+            </button>
+          ),
       })}
 
       {canApprove &&
@@ -469,6 +483,7 @@ export default function Request({
           pageCount: approvePageCount,
           onPageChange: setApprovePage,
           emptyMessage: "ไม่มีคำขอที่ตรงกับเงื่อนไข",
+          showSubmitter: true,
           renderActions: (r) =>
             r.status === "pending" ? (
               <>
@@ -632,31 +647,15 @@ export default function Request({
         </div>
       )}
 
-      <div className="bottom-nav">
-        <button className="nav-item" onClick={onGoHome}>
-          <span className="nav-icon"><MdHome /></span>
-          <span className="nav-label">Home</span>
-        </button>
-        {!isExemptFromCheckIn && (
-          <button className="nav-item" onClick={onGoRecord}>
-            <span className="nav-icon"><MdAccessTime /></span>
-            <span className="nav-label">Record</span>
-          </button>
-        )}
-        {!isExemptFromCheckIn && (
-          <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
-            <span className="nav-icon large"><MdSchedule /></span>
-          </button>
-        )}
-        <button className="nav-item active">
-          <span className="nav-icon"><MdAssignment /></span>
-          <span className="nav-label">Requests</span>
-        </button>
-        <button className="nav-item" onClick={onGoAccount}>
-          <span className="nav-icon"><MdPerson /></span>
-          <span className="nav-label">My Account</span>
-        </button>
-      </div>
+      <BottomNav
+        activePage="request"
+        isExemptFromCheckIn={isExemptFromCheckIn}
+        onGoHome={onGoHome}
+        onGoRecord={onGoRecord}
+        onOpenCheckIn={onOpenCheckIn}
+        onGoRequest={undefined}
+        onGoAccount={onGoAccount}
+      />
     </div>
   );
 }

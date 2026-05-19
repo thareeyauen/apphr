@@ -9,8 +9,6 @@
   --up-accent: #C4895A;
   --up-accent-soft: #F5E6D6;
   --up-accent-dark: #A06D40;
-  --up-font-thai: 'Sarabun','IBM Plex Sans Thai',system-ui,sans-serif;
-  --up-font-sans: 'Inter Tight','IBM Plex Sans Thai',system-ui,sans-serif;
 
   min-height: 100vh;
   background: var(--up-bg);
@@ -38,7 +36,7 @@
 .record-eyebrow {
   margin: 0 0 4px;
   color: var(--up-accent);
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--up-font-mono);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.1em;

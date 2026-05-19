@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Inter+Tight:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 :root {
   --text: #1A1A1A;
   --text-h: #1A1A1A;
@@ -11,9 +13,13 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: 'Sarabun', 'IBM Plex Sans Thai', system-ui, sans-serif;
-  --heading: 'Inter Tight', 'IBM Plex Sans Thai', system-ui, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  /* ─── Fonts (single source of truth) ──────────────────────────── */
+  --up-font-thai: 'IBM Plex Sans Thai', 'Sarabun', system-ui, sans-serif;
+  --up-font-sans: 'Inter Tight', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  --up-font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --sans:    var(--up-font-thai);
+  --heading: var(--up-font-sans);
+  --mono:    var(--up-font-mono);
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;

@@ -1,348 +1,250 @@
-export const USER_TYPES = [
+const MOCK_EMPLOYEES = [
   {
-    id: 'employee',
-    label: 'พนักงานทั่วไป',
-    position: 'Employee',
-    name: 'Thareeya Uentrakul',
-    employeeId: 'HAND23',
-    email: 'employee@apphr.test',
-    password: 'Employee@123',
-    profile: {
-      user: {
-        initial: 'TU',
-        prefix: 'นางสาว',
-        nameTh: 'ธรีญา อึ้งตระกูล',
-        nameEn: 'Thareeya Uentrakul',
-        nicknameTh: 'แทร์',
-        email: 'employee@apphr.test',
-        phone: '0812345678',
-        line: 'thareeya.u',
-        citizenId: '1234567890123',
-        education: [
-          { degreeLevel: 'ปริญญาตรี', faculty: 'คณะรัฐศาสตร์', major: 'รัฐศาสตร์', institute: 'จุฬาลงกรณ์มหาวิทยาลัย', studyYears: '2558-2562' }
-        ]
-      },
-      job: {
-        code: 'HAND23',
-        roleTh: 'Project Coordinator',
-        department: 'ฝ่ายโครงการ',
-        employeeLevel: 'Staff',
-        type: 'สัญญาจ้างประจำ',
-        startDate: '01 เม.ย. 2566',
-        tenure: '3 ปี 1 เดือน',
-        probationStart: '01 เม.ย. 2566',
-        probationEnd: '01 ก.ค. 2566',
-        salary: '35,000 บาท',
-        bank: {
-          name: 'ธนาคารกสิกรไทย',
-          branch: 'สาขาทองหล่อ',
-          acc: '123-4-56789-0',
-          accName: 'ธรีญา อึ้งตระกูล'
-        },
-        positionHistory: [
-          { year: '2567', from: 'Project Assistant', to: 'Project Coordinator', salaryChange: '+15%' },
-          { year: '2566', from: '—', to: 'Project Assistant', salaryChange: '25,000' }
-        ]
-      },
-      documents: [
-        { kind: 'สำเนาบัตรประชาชน', file: 'national-id-HAND23.pdf', size: '512 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
-        { kind: 'สำเนาทะเบียนบ้าน', file: 'house-registration-HAND23.pdf', size: '480 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
-        { kind: 'หนังสือรับรองการศึกษา', file: 'education-certificate-HAND23.pdf', size: '768 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
-        { kind: 'สำเนาบัญชีธนาคาร', file: 'bank-account-HAND23.pdf', size: '320 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
-        { kind: 'สัญญาจ้างงาน', file: 'employment-contract-HAND23.pdf', size: '256 KB', date: '01 เม.ย. 2566', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับเงินเดือน', file: 'salary-adjustment-HAND23-2567.pdf', size: '180 KB', date: '01 เม.ย. 2567', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับตำแหน่ง', file: 'position-adjustment-HAND23-2567.pdf', size: '192 KB', date: '01 เม.ย. 2567', status: 'signed' }
-      ]
-    }
+    nameTh: 'ดร.ต่อภัสสร์ ยมนาค',
+    employeeId: 'H0001',
+    position: 'Co-Founder and Chief Advisor',
+    department: 'Board of Directors',
+    employeeLevel: 'Board Level',
+    bankName: 'kbank'
   },
   {
-    id: 'admin',
-    label: 'แอดมิน',
-    position: 'Admin',
-    name: 'Admin User',
-    employeeId: 'ADMIN01',
-    email: 'admin@apphr.test',
-    password: 'Admin@123',
-    profile: {
-      user: {
-        initial: 'AU',
-        prefix: 'นาย',
-        nameTh: 'แอดมิน ระบบ',
-        nameEn: 'Admin User',
-        nicknameTh: 'แอดมิน',
-        email: 'admin@apphr.test',
-        phone: '0821000001',
-        line: 'admin.apphr',
-        citizenId: '110000001001',
-        education: [
-          { degreeLevel: 'ปริญญาตรี', faculty: 'วิทยาศาสตร์', major: 'เทคโนโลยีสารสนเทศ', institute: 'มหาวิทยาลัยกรุงเทพ', studyYears: '2556-2560' }
-        ]
-      },
-      job: {
-        code: 'ADMIN01',
-        roleTh: 'Admin',
-        department: 'ฝ่ายบริหารระบบ',
-        employeeLevel: 'Senior Staff',
-        type: 'สัญญาจ้างประจำ',
-        startDate: '01 ม.ค. 2566',
-        tenure: '3 ปี 4 เดือน',
-        probationStart: '01 ม.ค. 2566',
-        probationEnd: '01 เม.ย. 2566',
-        salary: '42,000 บาท',
-        bank: {
-          name: 'ธนาคารกรุงเทพ',
-          branch: 'สาขาสุขุมวิท',
-          acc: '200-1-00001-1',
-          accName: 'แอดมิน ระบบ'
-        },
-        positionHistory: [
-          { year: '2567', from: 'System Officer', to: 'Admin', salaryChange: '+12%' },
-          { year: '2566', from: '—', to: 'System Officer', salaryChange: '37,000' }
-        ]
-      },
-      documents: [
-        { kind: 'สำเนาบัตรประชาชน', file: 'national-id-ADMIN01.pdf', size: '512 KB', date: '01 ม.ค. 2566', status: 'reviewed' },
-        { kind: 'สำเนาทะเบียนบ้าน', file: 'house-registration-ADMIN01.pdf', size: '480 KB', date: '01 ม.ค. 2566', status: 'reviewed' },
-        { kind: 'หนังสือรับรองการศึกษา', file: 'education-certificate-ADMIN01.pdf', size: '768 KB', date: '01 ม.ค. 2566', status: 'reviewed' },
-        { kind: 'สำเนาบัญชีธนาคาร', file: 'bank-account-ADMIN01.pdf', size: '320 KB', date: '01 ม.ค. 2566', status: 'reviewed' },
-        { kind: 'สัญญาจ้างงาน', file: 'employment-contract-ADMIN01.pdf', size: '244 KB', date: '01 ม.ค. 2566', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับเงินเดือน', file: 'salary-adjustment-ADMIN01-2567.pdf', size: '180 KB', date: '01 ม.ค. 2567', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับตำแหน่ง', file: 'position-adjustment-ADMIN01-2567.pdf', size: '192 KB', date: '01 ม.ค. 2567', status: 'signed' }
-      ]
-    }
+    nameTh: 'สุภอรรถ โบสุวรรณ',
+    employeeId: 'H0002',
+    position: 'Managing Director',
+    department: 'Board of Directors',
+    employeeLevel: 'Board Level',
+    bankName: 'kbank'
   },
   {
-    id: 'accounting',
-    label: 'บัญชี',
-    position: 'Accounting',
-    name: 'Accounting User',
-    employeeId: 'ACC01',
-    email: 'accounting@apphr.test',
-    password: 'Accounting@123',
-    profile: {
-      user: {
-        initial: 'AC',
-        prefix: 'นางสาว',
-        nameTh: 'บัญชี ผู้ใช้งาน',
-        nameEn: 'Accounting User',
-        nicknameTh: 'บัญชี',
-        email: 'accounting@apphr.test',
-        phone: '0821000002',
-        line: 'accounting.apphr',
-        citizenId: '110000002002',
-        education: [
-          { degreeLevel: 'ปริญญาตรี', faculty: 'บริหารธุรกิจ', major: 'การบัญชี', institute: 'มหาวิทยาลัยหอการค้าไทย', studyYears: '2557-2561' }
-        ]
-      },
-      job: {
-        code: 'ACC01',
-        roleTh: 'Accounting',
-        department: 'ฝ่ายบัญชีและการเงิน',
-        employeeLevel: 'Staff',
-        type: 'สัญญาจ้างประจำ',
-        startDate: '15 ก.พ. 2566',
-        tenure: '3 ปี 2 เดือน',
-        probationStart: '15 ก.พ. 2566',
-        probationEnd: '15 พ.ค. 2566',
-        salary: '32,000 บาท',
-        bank: {
-          name: 'ธนาคารไทยพาณิชย์',
-          branch: 'สาขาอโศก',
-          acc: '200-1-00002-2',
-          accName: 'บัญชี ผู้ใช้งาน'
-        },
-        positionHistory: [
-          { year: '2567', from: 'Accounting Assistant', to: 'Accounting', salaryChange: '+10%' },
-          { year: '2566', from: '—', to: 'Accounting Assistant', salaryChange: '29,000' }
-        ]
-      },
-      documents: [
-        { kind: 'สำเนาบัตรประชาชน', file: 'national-id-ACC01.pdf', size: '512 KB', date: '15 ก.พ. 2566', status: 'reviewed' },
-        { kind: 'สำเนาทะเบียนบ้าน', file: 'house-registration-ACC01.pdf', size: '480 KB', date: '15 ก.พ. 2566', status: 'reviewed' },
-        { kind: 'หนังสือรับรองการศึกษา', file: 'education-certificate-ACC01.pdf', size: '768 KB', date: '15 ก.พ. 2566', status: 'reviewed' },
-        { kind: 'สำเนาบัญชีธนาคาร', file: 'bank-account-ACC01.pdf', size: '320 KB', date: '15 ก.พ. 2566', status: 'reviewed' },
-        { kind: 'สัญญาจ้างงาน', file: 'employment-contract-ACC01.pdf', size: '248 KB', date: '15 ก.พ. 2566', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับเงินเดือน', file: 'salary-adjustment-ACC01-2567.pdf', size: '180 KB', date: '15 ก.พ. 2567', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับตำแหน่ง', file: 'position-adjustment-ACC01-2567.pdf', size: '192 KB', date: '15 ก.พ. 2567', status: 'signed' }
-      ]
-    }
+    nameTh: 'พลังรัฐ รัชตะนาวิน',
+    employeeId: 'H0003',
+    position: 'Director of Operations',
+    department: 'Board of Directors',
+    employeeLevel: 'Board Level',
+    bankName: 'kbank'
   },
   {
-    id: 'manager',
-    label: 'หัวหน้า',
-    position: 'Manager',
-    name: 'Manager User',
-    employeeId: 'MGR01',
-    email: 'manager@apphr.test',
-    password: 'Manager@123',
-    profile: {
-      user: {
-        initial: 'MU',
-        prefix: 'นาย',
-        nameTh: 'หัวหน้า ผู้ใช้งาน',
-        nameEn: 'Manager User',
-        nicknameTh: 'หัวหน้า',
-        email: 'manager@apphr.test',
-        phone: '0821000003',
-        line: 'manager.apphr',
-        citizenId: '110000003003',
-        education: [
-          { degreeLevel: 'ปริญญาโท', faculty: 'พาณิชยศาสตร์และการบัญชี', major: 'การจัดการ', institute: 'จุฬาลงกรณ์มหาวิทยาลัย', studyYears: '2555-2557' }
-        ]
-      },
-      job: {
-        code: 'MGR01',
-        roleTh: 'Manager',
-        department: 'ฝ่ายบริหารงานบุคคล',
-        employeeLevel: 'Manager',
-        type: 'สัญญาจ้างประจำ',
-        startDate: '01 มี.ค. 2565',
-        tenure: '4 ปี 2 เดือน',
-        probationStart: '01 มี.ค. 2565',
-        probationEnd: '01 มิ.ย. 2565',
-        salary: '55,000 บาท',
-        bank: {
-          name: 'ธนาคารกสิกรไทย',
-          branch: 'สาขาทองหล่อ',
-          acc: '200-1-00003-3',
-          accName: 'หัวหน้า ผู้ใช้งาน'
-        },
-        positionHistory: [
-          { year: '2567', from: 'Assistant Manager', to: 'Manager', salaryChange: '+18%' },
-          { year: '2565', from: '—', to: 'Assistant Manager', salaryChange: '46,000' }
-        ]
-      },
-      documents: [
-        { kind: 'สำเนาบัตรประชาชน', file: 'national-id-MGR01.pdf', size: '512 KB', date: '01 มี.ค. 2565', status: 'reviewed' },
-        { kind: 'สำเนาทะเบียนบ้าน', file: 'house-registration-MGR01.pdf', size: '480 KB', date: '01 มี.ค. 2565', status: 'reviewed' },
-        { kind: 'หนังสือรับรองการศึกษา', file: 'education-certificate-MGR01.pdf', size: '768 KB', date: '01 มี.ค. 2565', status: 'reviewed' },
-        { kind: 'สำเนาบัญชีธนาคาร', file: 'bank-account-MGR01.pdf', size: '320 KB', date: '01 มี.ค. 2565', status: 'reviewed' },
-        { kind: 'สัญญาจ้างงาน', file: 'employment-contract-MGR01.pdf', size: '252 KB', date: '01 มี.ค. 2565', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับเงินเดือน', file: 'salary-adjustment-MGR01-2567.pdf', size: '180 KB', date: '01 มี.ค. 2567', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับตำแหน่ง', file: 'position-adjustment-MGR01-2567.pdf', size: '192 KB', date: '01 มี.ค. 2567', status: 'signed' }
-      ]
-    }
+    nameTh: 'ยุทธนา วังวสุ',
+    employeeId: 'H0004',
+    position: 'Co-Founder and Director',
+    department: 'Board of Directors',
+    employeeLevel: 'Board Level',
+    bankName: 'kbank'
   },
   {
-    id: 'director',
-    label: 'ผู้อำนวยการ',
-    position: 'Director',
-    name: 'Director User',
-    employeeId: 'DIR01',
-    email: 'director@apphr.test',
-    password: 'Director@123',
-    profile: {
-      user: {
-        initial: 'DU',
-        prefix: 'นาย',
-        nameTh: 'อำนวย ผู้บริหาร',
-        nameEn: 'Director User',
-        nicknameTh: 'ผอ.',
-        email: 'director@apphr.test',
-        phone: '0821000004',
-        line: 'director.apphr',
-        citizenId: '110000004004',
-        education: [
-          { degreeLevel: 'ปริญญาโท', faculty: 'บริหารธุรกิจ', major: 'การจัดการเชิงกลยุทธ์', institute: 'มหาวิทยาลัยธรรมศาสตร์', studyYears: '2548-2550' }
-        ]
-      },
-      job: {
-        code: 'DIR01',
-        roleTh: 'Director',
-        department: 'สำนักผู้บริหาร',
-        employeeLevel: 'Director Level',
-        type: 'สัญญาจ้างประจำ',
-        startDate: '01 ม.ค. 2562',
-        tenure: '7 ปี 4 เดือน',
-        probationStart: '01 ม.ค. 2562',
-        probationEnd: '01 เม.ย. 2562',
-        salary: '120,000 บาท',
-        bank: {
-          name: 'ธนาคารกสิกรไทย',
-          branch: 'สาขาสีลม',
-          acc: '200-1-00004-4',
-          accName: 'อำนวย ผู้บริหาร'
-        },
-        positionHistory: [
-          { year: '2566', from: 'Senior Manager', to: 'Director', salaryChange: '+22%' },
-          { year: '2562', from: '—', to: 'Senior Manager', salaryChange: '95,000' }
-        ]
-      },
-      documents: [
-        { kind: 'สำเนาบัตรประชาชน', file: 'national-id-DIR01.pdf', size: '512 KB', date: '01 ม.ค. 2562', status: 'reviewed' },
-        { kind: 'สำเนาทะเบียนบ้าน', file: 'house-registration-DIR01.pdf', size: '480 KB', date: '01 ม.ค. 2562', status: 'reviewed' },
-        { kind: 'หนังสือรับรองการศึกษา', file: 'education-certificate-DIR01.pdf', size: '768 KB', date: '01 ม.ค. 2562', status: 'reviewed' },
-        { kind: 'สำเนาบัญชีธนาคาร', file: 'bank-account-DIR01.pdf', size: '320 KB', date: '01 ม.ค. 2562', status: 'reviewed' },
-        { kind: 'สัญญาจ้างงาน', file: 'employment-contract-DIR01.pdf', size: '256 KB', date: '01 ม.ค. 2562', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับเงินเดือน', file: 'salary-adjustment-DIR01-2567.pdf', size: '180 KB', date: '01 ม.ค. 2567', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับตำแหน่ง', file: 'position-adjustment-DIR01-2566.pdf', size: '192 KB', date: '01 ม.ค. 2566', status: 'signed' }
-      ]
-    }
+    nameTh: 'สุภัจจา อังค์สุวรรณ',
+    employeeId: 'H0006',
+    position: 'Director of Research & Knowledge Management',
+    department: 'Good Governance Research and Learning Department',
+    employeeLevel: 'Director Level',
+    employeeType: 'สัญญาจ้างประจำ',
+    startDate: '18/12/2017',
+    bankName: 'kbank',
+    bankAccount: '0351293993'
   },
   {
-    id: 'board',
-    label: 'กรรมการบริหาร',
-    position: 'Board',
-    name: 'Board User',
-    employeeId: 'BRD01',
-    email: 'board@apphr.test',
-    password: 'Board@123',
-    profile: {
-      user: {
-        initial: 'BU',
-        prefix: 'นาง',
-        nameTh: 'บอร์ด กรรมการ',
-        nameEn: 'Board User',
-        nicknameTh: 'บอร์ด',
-        email: 'board@apphr.test',
-        phone: '0821000005',
-        line: 'board.apphr',
-        citizenId: '110000005005',
-        education: [
-          { degreeLevel: 'ปริญญาเอก', faculty: 'พาณิชยศาสตร์และการบัญชี', major: 'บริหารธุรกิจ', institute: 'จุฬาลงกรณ์มหาวิทยาลัย', studyYears: '2540-2544' }
-        ]
-      },
-      job: {
-        code: 'BRD01',
-        roleTh: 'Board Member',
-        department: 'คณะกรรมการบริหาร',
-        employeeLevel: 'Board Level',
-        type: 'สัญญาจ้างประจำ',
-        startDate: '01 ม.ค. 2558',
-        tenure: '11 ปี 4 เดือน',
-        probationStart: '01 ม.ค. 2558',
-        probationEnd: '01 เม.ย. 2558',
-        salary: '250,000 บาท',
-        bank: {
-          name: 'ธนาคารกรุงเทพ',
-          branch: 'สาขาสีลม',
-          acc: '200-1-00005-5',
-          accName: 'บอร์ด กรรมการ'
-        },
-        positionHistory: [
-          { year: '2563', from: 'Director', to: 'Board Member', salaryChange: '+30%' },
-          { year: '2558', from: '—', to: 'Director', salaryChange: '180,000' }
-        ]
-      },
-      documents: [
-        { kind: 'สำเนาบัตรประชาชน', file: 'national-id-BRD01.pdf', size: '512 KB', date: '01 ม.ค. 2558', status: 'reviewed' },
-        { kind: 'สำเนาทะเบียนบ้าน', file: 'house-registration-BRD01.pdf', size: '480 KB', date: '01 ม.ค. 2558', status: 'reviewed' },
-        { kind: 'หนังสือรับรองการศึกษา', file: 'education-certificate-BRD01.pdf', size: '768 KB', date: '01 ม.ค. 2558', status: 'reviewed' },
-        { kind: 'สำเนาบัญชีธนาคาร', file: 'bank-account-BRD01.pdf', size: '320 KB', date: '01 ม.ค. 2558', status: 'reviewed' },
-        { kind: 'สัญญาจ้างงาน', file: 'employment-contract-BRD01.pdf', size: '264 KB', date: '01 ม.ค. 2558', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับเงินเดือน', file: 'salary-adjustment-BRD01-2567.pdf', size: '180 KB', date: '01 ม.ค. 2567', status: 'signed' },
-        { kind: 'เอกสารแจ้งปรับตำแหน่ง', file: 'position-adjustment-BRD01-2563.pdf', size: '192 KB', date: '01 ม.ค. 2563', status: 'signed' }
-      ]
-    }
+    nameTh: 'พัชรี ตรีพรม',
+    employeeId: 'H0007',
+    position: 'Project Manager',
+    department: 'Collaboration and Coordination Department',
+    employeeLevel: 'Project Level',
+    employeeType: 'สัญญาจ้างประจำ',
+    startDate: '18/12/2017',
+    bankName: 'kbank',
+    bankAccount: '0351575697'
+  },
+  {
+    nameTh: 'จรัสศรี พะลายะสุต',
+    employeeId: 'H0008',
+    position: 'Director of Accounting and Finance',
+    department: 'Accounting and Finance Department',
+    employeeLevel: 'Director Level',
+    employeeType: 'การจ้างที่ปรึกษา',
+    startDate: '07/04/2019',
+    bankName: 'kbank',
+    bankAccount: '7722080984',
+    bankBranch: 'Central World'
+  },
+  {
+    nameTh: 'รักษ์ป่า อู่สุวรรณ',
+    employeeId: 'H0015',
+    position: 'Project Manager',
+    department: 'Open Data for Transparency & Participation Department',
+    employeeLevel: 'Project Level',
+    employeeType: 'สัญญาจ้างประจำ',
+    startDate: '03/07/2022',
+    probationStart: '03/07/2022',
+    probationEnd: '06/07/2022',
+    bankName: 'kbank',
+    bankAccount: '0138434362',
+    bankBranch: 'บ้านดู่'
+  },
+  {
+    nameTh: 'ศรันย์ชนก ลิมวิสิฐธนกร',
+    employeeId: 'H0025',
+    position: 'Executive Assistant',
+    department: 'Collaboration and Coordination Department',
+    employeeLevel: 'Project Level',
+    employeeType: 'สัญญาจ้างประจำ',
+    startDate: '04/03/2023',
+    probationStart: '04/03/2023',
+    bankName: 'kbank',
+    bankAccount: '0238067782',
+    bankBranch: 'บางกระบือ'
+  },
+  {
+    nameTh: 'ธรีญา อึ้งตระกูล',
+    employeeId: 'H0029',
+    position: 'Project coordinator',
+    department: 'Open Data for Transparency & Participation Department',
+    employeeLevel: 'Project Level',
+    employeeType: 'สัญญาจ้างประจำ',
+    startDate: '08/07/2023',
+    probationStart: '08/07/2023',
+    bankName: 'kbank',
+    bankAccount: '0533261361',
+    bankBranch: 'ฟิวเจอร์ พาร์ค รังสิต'
+  },
+  {
+    nameTh: 'จตุพร ศิรเลิศมุกุล',
+    employeeId: 'H0031',
+    position: 'Accountant',
+    department: 'Accounting and Finance Department',
+    employeeLevel: 'Project Level',
+    employeeType: 'สัญญาจ้างประจำ',
+    startDate: '25/03/2024',
+    probationStart: '25/03/2024',
+    bankName: 'kbank',
+    bankAccount: '1803680430',
+    bankBranch: 'ฟิวเจอร์ พาร์ค รังสิต'
+  },
+  {
+    nameTh: 'ธนากาญจน์ กันทอง',
+    employeeId: 'H0032',
+    position: 'Research Assistant',
+    department: 'Good Governance Research and Learning Department',
+    employeeLevel: 'Project Level',
+    employeeType: 'สัญญาจ้างประจำ',
+    startDate: '27/05/2024',
+    probationStart: '27/05/2024',
+    bankName: 'kbank',
+    bankAccount: '0408689627',
+    bankBranch: 'บิ๊กซี อ่อนนุช'
+  },
+  {
+    nameTh: 'ศุภชัย เสถียรหมั่น',
+    employeeId: 'H0033',
+    position: 'Researcher',
+    department: 'Good Governance Research and Learning Department',
+    employeeLevel: 'Project Level',
+    employeeType: 'สัญญาจ้างประจำ',
+    startDate: '06/10/2024',
+    probationStart: '06/10/2024',
+    bankName: 'kbank',
+    bankAccount: '1861796600',
+    bankBranch: 'จามจุรี สแควร์'
+  },
+  {
+    nameTh: 'ศุภวิชญ์ แก้วคูนอก',
+    employeeId: 'H0034',
+    position: 'Center Manager of KRAC',
+    department: 'Good Governance Research and Learning Department',
+    employeeLevel: 'Project Level',
+    employeeType: 'สัญญาจ้างประจำ',
+    startDate: '09/09/2024',
+    probationStart: '09/09/2024',
+    probationEnd: '12/10/2024',
+    bankName: 'kbank',
+    bankAccount: '1928266644',
+    bankBranch: 'ตลาดเกาะโพธิ์'
+  },
+  {
+    nameTh: 'ศศธร เอี่ยมสะอาด',
+    employeeId: 'H0042',
+    position: 'Content Writer',
+    department: 'Open Data for Transparency & Participation Department',
+    employeeLevel: 'Project Level',
+    employeeType: 'สัญญาจ้างประจำ',
+    startDate: '06/05/2025',
+    probationStart: '06/05/2025',
+    bankName: 'kbank',
+    bankAccount: '0252721827',
+    bankBranch: 'สาขาเซ็นทรัลพลาซ่า เชียงใหม่'
   }
 ];
 
-export const DEFAULT_USER_TYPE = USER_TYPES[0].id;
+const getNickname = (nameTh) => nameTh.split(' ')[0].replace(/^ดร\./, '');
+
+const getInitial = (employee) =>
+  employee.employeeId.replace(/^H/, '').slice(-2);
+
+const createUserType = (employee) => ({
+  id: employee.employeeId.toLowerCase(),
+  label: employee.employeeLevel,
+  position: employee.position,
+  name: employee.nameTh,
+  employeeId: employee.employeeId,
+  email: `${employee.employeeId.toLowerCase()}@apphr.test`,
+  password: `${employee.employeeId}@123`,
+  profile: {
+    user: {
+      initial: getInitial(employee),
+      prefix: '',
+      nameTh: employee.nameTh,
+      nameEn: employee.nameTh,
+      nicknameTh: getNickname(employee.nameTh),
+      email: `${employee.employeeId.toLowerCase()}@apphr.test`,
+      phone: '',
+      line: '',
+      citizenId: '',
+      education: []
+    },
+    job: {
+      code: employee.employeeId,
+      roleTh: employee.position,
+      department: employee.department,
+      employeeLevel: employee.employeeLevel,
+      type: employee.employeeType || '',
+      startDate: employee.startDate || '',
+      tenure: '',
+      probationStart: employee.probationStart || '',
+      probationEnd: employee.probationEnd || '',
+      salary: '',
+      bank: {
+        name: employee.bankName || '',
+        branch: employee.bankBranch || '',
+        acc: employee.bankAccount || '',
+        accName: employee.bankAccountName || ''
+      },
+      positionHistory: []
+    },
+    documents: []
+  }
+});
+
+export const USER_TYPES = MOCK_EMPLOYEES.map(createUserType);
+
+export const DEFAULT_USER_TYPE = 'h0029';
+
+export const CHECK_IN_USER_TYPES = USER_TYPES.filter((type) =>
+  ['Project Level', 'Director Level', 'Board Level'].includes(type.profile?.job?.employeeLevel)
+);
+
+export const ADMIN_USER_TYPES = USER_TYPES.filter((type) =>
+  type.profile?.job?.department === 'Accounting and Finance Department'
+);
 
 export const getUserType = (userTypeId = DEFAULT_USER_TYPE) =>
-  USER_TYPES.find((type) => type.id === userTypeId) || USER_TYPES[0];
+  USER_TYPES.find((type) => type.id === userTypeId) ||
+  USER_TYPES.find((type) => type.id === DEFAULT_USER_TYPE) ||
+  USER_TYPES[0];
 
 export const getUserTypeByEmail = (email = '') => {
   const normalizedEmail = email.trim().toLowerCase();
-  return USER_TYPES.find((type) => type.email.toLowerCase() === normalizedEmail);
+  return CHECK_IN_USER_TYPES.find((type) => type.email.toLowerCase() === normalizedEmail);
+};
+
+export const getAdminUserTypeByEmail = (email = '') => {
+  const normalizedEmail = email.trim().toLowerCase();
+  return ADMIN_USER_TYPES.find((type) => type.email.toLowerCase() === normalizedEmail);
 };

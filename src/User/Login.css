@@ -7,8 +7,6 @@
   --up-line: #E8E3D8;
   --up-accent: #C4895A;
   --up-accent-dark: #A06D40;
-  --up-font-thai: 'Sarabun','IBM Plex Sans Thai',system-ui,sans-serif;
-  --up-font-sans: 'Inter Tight','IBM Plex Sans Thai',system-ui,sans-serif;
 
   min-height: 100vh;
   background: var(--up-bg);
@@ -73,6 +71,14 @@
 .login-field select:focus {
   border-color: var(--up-accent);
   box-shadow: 0 0 0 3px rgba(52, 52, 52, 0.12);
+}
+
+.login-error {
+  margin: -6px 0 0;
+  color: #B43A3A;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
 }
 
 .login-submit {

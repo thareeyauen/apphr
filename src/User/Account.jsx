@@ -9,19 +9,15 @@ import {
   MdHealthAndSafety,
   MdCheckroom,
   MdEngineering,
-  MdLaptop,
-  MdHome,
-  MdAccessTime,
-  MdAssignment,
-  MdEdit,
-  MdLogout,
-  MdSave,
-  MdSchedule,
-  MdLock,
-  MdClose,
-  MdVisibility,
-  MdVisibilityOff
+  MdLaptop
 } from 'react-icons/md';
+import {
+  AccountContent,
+  AccountHeader,
+  AccountTabs,
+  PasswordResetModal
+} from './Components/AccountPageComponents';
+import BottomNav from './Components/BottomNav';
 import './Account.css';
 
 const TAB_IDS = [
@@ -221,6 +217,21 @@ function GeneralTab({ u, editing = false, draft = u, onDraftChange }) {
       education
     });
   };
+  const addEducation = () => {
+    onDraftChange?.({
+      ...draft,
+      education: [
+        ...(draft.education || []),
+        { degreeLevel: '', faculty: '', major: '', institute: '', studyYears: '' }
+      ]
+    });
+  };
+  const removeEducation = (index) => {
+    onDraftChange?.({
+      ...draft,
+      education: (draft.education || []).filter((_, i) => i !== index)
+    });
+  };
 
   return (
     <>
@@ -292,15 +303,16 @@ function GeneralTab({ u, editing = false, draft = u, onDraftChange }) {
       </Group>
       <Group title="การศึกษา" columns={1}>
         <div className="up-table">
-          <div className="up-row up-row--education up-row--head">
+          <div className={'up-row up-row--education' + (editing ? ' up-row--education-edit' : '') + ' up-row--head'}>
             <div>วุฒิการศึกษา</div>
             <div>คณะ</div>
             <div>สาขา</div>
             <div>สถาบัน</div>
             <div className="up-cell-mono--right">ปีที่เริ่ม-จบการศึกษา</div>
+            {editing && <div />}
           </div>
           {(editing ? draft.education : u.education).map((e, i) => (
-            <div key={i} className="up-row up-row--education up-row--zebra">
+            <div key={i} className={'up-row up-row--education' + (editing ? ' up-row--education-edit' : '') + ' up-row--zebra'}>
               {editing ? (
                 <>
                   <input className="up-edit-field" value={e.degreeLevel || ''} onChange={(event) => setEducationField(i, 'degreeLevel', event.target.value)} />
@@ -308,6 +320,15 @@ function GeneralTab({ u, editing = false, draft = u, onDraftChange }) {
                   <input className="up-edit-field" value={e.major || ''} onChange={(event) => setEducationField(i, 'major', event.target.value)} />
                   <input className="up-edit-field" value={e.institute || ''} onChange={(event) => setEducationField(i, 'institute', event.target.value)} />
                   <input className="up-edit-field" value={e.studyYears || ''} onChange={(event) => setEducationField(i, 'studyYears', event.target.value)} />
+                  <button
+                    type="button"
+                    className="up-btn up-btn--icon"
+                    onClick={() => removeEducation(i)}
+                    aria-label="ลบวุฒิการศึกษา"
+                    title="ลบวุฒิการศึกษา"
+                  >
+                    ×
+                  </button>
                 </>
               ) : (
                 <>
@@ -321,6 +342,15 @@ function GeneralTab({ u, editing = false, draft = u, onDraftChange }) {
             </div>
           ))}
         </div>
+        {editing && (
+          <button
+            type="button"
+            className="up-btn up-add-education"
+            onClick={addEducation}
+          >
+            + เพิ่มวุฒิการศึกษา
+          </button>
+        )}
       </Group>
     </>
   );
@@ -445,6 +475,11 @@ const normalizeEducation = (education = []) =>
   }));
 
 const removeDashes = (value = '') => String(value).replaceAll('-', '');
+const hasOwn = (object, key) =>
+  Object.prototype.hasOwnProperty.call(object || {}, key);
+
+const pickProfileValue = (section, key, fallback) =>
+  hasOwn(section, key) ? section[key] : fallback;
 
 export default function Account({
   user,
@@ -455,6 +490,7 @@ export default function Account({
   onOpenCheckIn,
   onLogout,
   onMessage,
+  isCheckInDisabled = false,
   initialTab = 'general'
 }) {
   const ref = useRef(null);
@@ -471,7 +507,7 @@ export default function Account({
   const [showPwNew, setShowPwNew] = useState(false);
   const [showPwConfirm, setShowPwConfirm] = useState(false);
   const profile = user?.profile || {};
-  const isExemptFromCheckIn = user?.profile?.job?.employeeLevel === 'Board Level' || user?.profile?.job?.employeeLevel === 'Director Level';
+  const isExemptFromCheckIn = isCheckInDisabled || user?.profile?.job?.employeeLevel === 'Board Level' || user?.profile?.job?.employeeLevel === 'Director Level';
 
   const data = {
     ...DEFAULT_PROFILE,
@@ -480,14 +516,16 @@ export default function Account({
       nameEn: user?.name || DEFAULT_PROFILE.user.nameEn,
       email: user?.email || profile.user?.email || DEFAULT_PROFILE.user.email,
       initial: profile.user?.initial || (user?.name ? getInitials(user.name) : DEFAULT_PROFILE.user.initial),
-      citizenId: removeDashes(profile.user?.citizenId || DEFAULT_PROFILE.user.citizenId),
-      phone: removeDashes(profile.user?.phone || DEFAULT_PROFILE.user.phone),
+      citizenId: removeDashes(pickProfileValue(profile.user, 'citizenId', DEFAULT_PROFILE.user.citizenId)),
+      phone: removeDashes(pickProfileValue(profile.user, 'phone', DEFAULT_PROFILE.user.phone)),
       emergency: {
         ...DEFAULT_PROFILE.user.emergency,
         ...profile.user?.emergency,
-        phone: removeDashes(profile.user?.emergency?.phone || DEFAULT_PROFILE.user.emergency.phone)
+        phone: removeDashes(pickProfileValue(profile.user?.emergency, 'phone', DEFAULT_PROFILE.user.emergency.phone))
       },
-      education: normalizeEducation(profile.user?.education || DEFAULT_PROFILE.user.education)
+      education: hasOwn(profile.user, 'education')
+        ? normalizeEducation(profile.user.education)
+        : normalizeEducation(DEFAULT_PROFILE.user.education)
     },
     job: {
       ...mergeProfileSection(DEFAULT_PROFILE.job, profile.job),
@@ -501,16 +539,20 @@ export default function Account({
       },
       code: user?.employeeId || DEFAULT_PROFILE.job.code,
       roleTh: user?.position || DEFAULT_PROFILE.job.roleTh,
-      employeeLevel: profile.job?.employeeLevel || DEFAULT_PROFILE.job.employeeLevel,
-      probationStart: profile.job?.probationStart || profile.job?.startDate || DEFAULT_PROFILE.job.probationStart,
-      salary: profile.job?.salary || DEFAULT_PROFILE.job.salary,
-      positionHistory: profile.job?.positionHistory || DEFAULT_PROFILE.job.positionHistory
+      employeeLevel: pickProfileValue(profile.job, 'employeeLevel', DEFAULT_PROFILE.job.employeeLevel),
+      probationStart: hasOwn(profile.job, 'probationStart')
+        ? profile.job.probationStart
+        : pickProfileValue(profile.job, 'startDate', DEFAULT_PROFILE.job.probationStart),
+      salary: pickProfileValue(profile.job, 'salary', DEFAULT_PROFILE.job.salary),
+      positionHistory: hasOwn(profile.job, 'positionHistory')
+        ? profile.job.positionHistory
+        : DEFAULT_PROFILE.job.positionHistory
     },
     company: {
       ...mergeProfileSection(DEFAULT_PROFILE.company, profile.company),
       nameTh: user?.company || DEFAULT_PROFILE.company.nameTh
     },
-    documents: profile.documents || DEFAULT_PROFILE.documents
+    documents: hasOwn(profile, 'documents') ? profile.documents : DEFAULT_PROFILE.documents
   };
 
   const { user: u, job: j, company: c, documents } = data;
@@ -564,186 +606,82 @@ export default function Account({
 
   return (
     <div ref={ref} className={'up-root' + (narrow ? ' is-narrow' : '')}>
-      <div className="up-header">
-        <div className="up-avatar">{u.initial}</div>
-        <div className="up-headline">
-          <div className="up-emp-code">{j.code}</div>
-          <h1 className="up-name">{u.nameTh}</h1>
-          <div className="up-subtitle">
-            {j.roleTh} · {u.nameEn}
-          </div>
-          {user?.userTypeLabel && (
-            <div className="up-user-type">{user.userTypeLabel}</div>
-          )}
-        </div>
-        <div className="up-actions">
-          {active === 'general' && (
-            isEditingGeneral ? (
-              <>
-                <button className="up-btn" type="button" onClick={cancelEditGeneral}>Cancel</button>
-                <button className="up-btn up-btn--primary" type="button" onClick={saveEditGeneral}>
-                  <MdSave />
-                  Save
-                </button>
-              </>
-            ) : (
-              <button className="up-btn up-btn--primary" type="button" onClick={startEditGeneral}>
-                <MdEdit />
-                Edit
-              </button>
-            )
-          )}
-          <button className="up-btn" type="button" onClick={openPasswordPopup}>
-            <MdLock />
-            Reset Password
-          </button>
-          {onMessage && (
-            <button className="up-btn" onClick={onMessage}>ส่งข้อความ</button>
-          )}
-          <button
-            className="up-btn up-btn--logout"
-            onClick={onLogout || (() => { window.location.href = '/login'; })}
-          >
-            <MdLogout />
-            Log out
-          </button>
-        </div>
-      </div>
+      <AccountHeader
+        user={user}
+        accountUser={u}
+        job={j}
+        active={active}
+        isEditingGeneral={isEditingGeneral}
+        onStartEditGeneral={startEditGeneral}
+        onCancelEditGeneral={cancelEditGeneral}
+        onSaveEditGeneral={saveEditGeneral}
+        onOpenPasswordPopup={openPasswordPopup}
+        onLogout={onLogout}
+        onMessage={onMessage}
+      />
 
-      <div className="up-tabs" role="tablist">
-        {TAB_IDS.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={active === t.id}
-            onClick={() => {
-              setActive(t.id);
-              setGeneralDraft(null);
-            }}
-            className={'up-tab' + (active === t.id ? ' is-active' : '')}
-          >
-            {t.icon}
-            {t.th}
-          </button>
-        ))}
-      </div>
+      <AccountTabs
+        tabs={TAB_IDS}
+        active={active}
+        onChange={(tabId) => {
+          setActive(tabId);
+          setGeneralDraft(null);
+        }}
+      />
 
-      <div className="up-content">
-        <div className="up-card">
-          {active === 'company'  && <CompanyTab  c={c} />}
-          {active === 'general'  && (
-            <GeneralTab
-              u={u}
-              editing={isEditingGeneral}
-              draft={generalDraft || u}
-              onDraftChange={setGeneralDraft}
-            />
-          )}
-          {active === 'job'      && <JobTab      j={j} />}
-          {active === 'benefits' && <BenefitsTab j={j} />}
-          {active === 'docs'     && <DocsTab     documents={documents} />}
-        </div>
-      </div>
+      <AccountContent
+        active={active}
+        company={c}
+        accountUser={u}
+        job={j}
+        documents={documents}
+        isEditingGeneral={isEditingGeneral}
+        generalDraft={generalDraft}
+        onDraftChange={setGeneralDraft}
+        CompanyTab={CompanyTab}
+        GeneralTab={GeneralTab}
+        JobTab={JobTab}
+        BenefitsTab={BenefitsTab}
+        DocsTab={DocsTab}
+      />
 
-      {showPasswordPopup && (
-        <div className="up-modal-overlay" onClick={closePasswordPopup}>
-          <div className="up-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="up-modal-header">
-              <h3>เปลี่ยนรหัสผ่าน</h3>
-              <button className="up-modal-close" type="button" onClick={closePasswordPopup} aria-label="Close">
-                <MdClose />
-              </button>
-            </div>
-            <div className="up-modal-body">
-              {pwSuccess ? (
-                <p className="up-modal-success">เปลี่ยนรหัสผ่านสำเร็จ</p>
-              ) : (
-                <>
-                  <label className="up-pw-field">
-                    <span>รหัสผ่านปัจจุบัน</span>
-                    <div className="up-pw-input-wrap">
-                      <input
-                        type={showPwCurrent ? 'text' : 'password'}
-                        value={pwCurrent}
-                        onChange={(e) => { setPwCurrent(e.target.value); setPwError(''); }}
-                        autoComplete="current-password"
-                        placeholder="รหัสผ่านปัจจุบัน"
-                      />
-                      <button type="button" className="up-pw-eye" onClick={() => setShowPwCurrent((v) => !v)}>
-                        {showPwCurrent ? <MdVisibilityOff /> : <MdVisibility />}
-                      </button>
-                    </div>
-                  </label>
-                  <label className="up-pw-field">
-                    <span>รหัสผ่านใหม่</span>
-                    <div className="up-pw-input-wrap">
-                      <input
-                        type={showPwNew ? 'text' : 'password'}
-                        value={pwNew}
-                        onChange={(e) => { setPwNew(e.target.value); setPwError(''); }}
-                        autoComplete="new-password"
-                        placeholder="อย่างน้อย 8 ตัวอักษร"
-                      />
-                      <button type="button" className="up-pw-eye" onClick={() => setShowPwNew((v) => !v)}>
-                        {showPwNew ? <MdVisibilityOff /> : <MdVisibility />}
-                      </button>
-                    </div>
-                  </label>
-                  <label className="up-pw-field">
-                    <span>ยืนยันรหัสผ่านใหม่</span>
-                    <div className="up-pw-input-wrap">
-                      <input
-                        type={showPwConfirm ? 'text' : 'password'}
-                        value={pwConfirm}
-                        onChange={(e) => { setPwConfirm(e.target.value); setPwError(''); }}
-                        autoComplete="new-password"
-                        placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
-                      />
-                      <button type="button" className="up-pw-eye" onClick={() => setShowPwConfirm((v) => !v)}>
-                        {showPwConfirm ? <MdVisibilityOff /> : <MdVisibility />}
-                      </button>
-                    </div>
-                  </label>
-                  {pwError && <p className="up-modal-error">{pwError}</p>}
-                  <button
-                    className="up-btn up-btn--primary up-modal-submit"
-                    type="button"
-                    onClick={handleResetPassword}
-                  >
-                    บันทึก
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <PasswordResetModal
+        isOpen={showPasswordPopup}
+        success={pwSuccess}
+        error={pwError}
+        currentPassword={pwCurrent}
+        newPassword={pwNew}
+        confirmPassword={pwConfirm}
+        showCurrent={showPwCurrent}
+        showNew={showPwNew}
+        showConfirm={showPwConfirm}
+        onClose={closePasswordPopup}
+        onSubmit={handleResetPassword}
+        onCurrentPasswordChange={(value) => {
+          setPwCurrent(value);
+          setPwError('');
+        }}
+        onNewPasswordChange={(value) => {
+          setPwNew(value);
+          setPwError('');
+        }}
+        onConfirmPasswordChange={(value) => {
+          setPwConfirm(value);
+          setPwError('');
+        }}
+        onToggleCurrent={() => setShowPwCurrent((value) => !value)}
+        onToggleNew={() => setShowPwNew((value) => !value)}
+        onToggleConfirm={() => setShowPwConfirm((value) => !value)}
+      />
 
-      <div className="bottom-nav">
-        <button className="nav-item" onClick={onGoHome}>
-          <span className="nav-icon"><MdHome /></span>
-          <span className="nav-label">Home</span>
-        </button>
-        {!isExemptFromCheckIn && (
-          <button className="nav-item" onClick={onGoRecord}>
-            <span className="nav-icon"><MdAccessTime /></span>
-            <span className="nav-label">Record</span>
-          </button>
-        )}
-        {!isExemptFromCheckIn && (
-          <button className="nav-item center" onClick={onOpenCheckIn} aria-label="Open check in">
-            <span className="nav-icon large"><MdSchedule /></span>
-          </button>
-        )}
-        <button className="nav-item" onClick={onGoRequest}>
-          <span className="nav-icon"><MdAssignment /></span>
-          <span className="nav-label">Requests</span>
-        </button>
-        <button className="nav-item active">
-          <span className="nav-icon"><MdPerson /></span>
-          <span className="nav-label">My Account</span>
-        </button>
-      </div>
+      <BottomNav
+        activePage="account"
+        isExemptFromCheckIn={isExemptFromCheckIn}
+        onGoHome={onGoHome}
+        onGoRecord={onGoRecord}
+        onOpenCheckIn={onOpenCheckIn}
+        onGoRequest={onGoRequest}
+      />
     </div>
   );
 }

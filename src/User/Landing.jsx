@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
-  MdAccessTime,
   MdHome,
   MdDateRange,
-  MdSchedule,
-  MdAssignment,
-  MdPerson,
   MdBusiness,
   MdWorkOutline,
   MdClose,
@@ -18,9 +14,13 @@ import './Landing.css';
 import Account from './Account';
 import Record from './Record';
 import Request from './Request';
+import BottomNav from './Components/BottomNav';
+import { CHECK_IN_USER_TYPES } from './userTypes';
 
 const CHECK_IN_RECORDS_KEY = 'apphr-checkin-records';
+const CHECK_IN_RECORDS_SYNC_EVENT = 'apphr-checkin-records-sync';
 const DEMO_SEED_KEY = 'apphr-demo-seeded';
+const LEAVE_CHECKIN_WARNING_KEY = 'apphr-show-leave-checkin-warning';
 const today = new Date();
 
 const getDateKey = (date) => {
@@ -36,31 +36,117 @@ const getUserRecordOwnerKey = (user) =>
 const getRecordOwnerKey = (record) =>
   record?.ownerKey || record?.employeeId || record?.email || record?.userId || '';
 
-export default function Landing({ user: currentUser, requests = [], onGoRecord, onGoRequest, onGoAccount }) {
+const getRecordTimeValue = (record) => {
+  const isoTime = Date.parse(record?.id);
+  if (Number.isFinite(isoTime)) return isoTime;
+  if (record?.dateKey && record?.time) {
+    const normalizedTime = String(record.time).replace('.', ':');
+    const parsed = Date.parse(`${record.dateKey}T${normalizedTime}`);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+};
+
+const readStoredCheckInRecords = () => {
+  const savedRecords = localStorage.getItem(CHECK_IN_RECORDS_KEY);
+  return savedRecords ? JSON.parse(savedRecords) : [];
+};
+
+const writeStoredCheckInRecords = (records) => {
+  localStorage.setItem(CHECK_IN_RECORDS_KEY, JSON.stringify(records));
+  window.dispatchEvent(
+    new CustomEvent(CHECK_IN_RECORDS_SYNC_EVENT, { detail: records })
+  );
+};
+
+const TEAM_MOCK_STATUS = {
+  employee: {
+    status: { label: 'พร้อมทำงาน', tone: 'ready' },
+    checkInTime: '09:05',
+    location: 'HQ · สาทร',
+    statusMessage: '',
+    accent: '#C4895A'
+  },
+  director: {
+    status: null,
+    checkInTime: '',
+    location: '',
+    statusMessage: ''
+  },
+  board: {
+    status: null,
+    checkInTime: '',
+    location: '',
+    statusMessage: ''
+  }
+};
+
+const TEAM_ACCENTS = ['#C4895A', '#6F9DB5', '#6B8E5A', '#B685C7', '#8E7CC3', '#B57373'];
+
+const CHECK_IN_EXEMPT_LEVELS = ['Board Level', 'Director Level'];
+
+const isCheckInExemptAccount = (account) =>
+  CHECK_IN_EXEMPT_LEVELS.includes(account?.profile?.job?.employeeLevel);
+
+const isDirectorAccount = (account) =>
+  account?.profile?.job?.employeeLevel === 'Director Level';
+
+export default function Landing({
+  user: currentUser,
+  requests = [],
+  teamRequests = requests,
+  checkInRecords: externalCheckInRecords,
+  onCheckInRecordsChange,
+  onGoRecord,
+  onGoRequest,
+  onGoAccount
+}) {
   const [activePage, setActivePage] = useState('home');
   const [showCheckInPopup, setShowCheckInPopup] = useState(false);
   const [selectedCheckInLocation, setSelectedCheckInLocation] = useState('');
   const [offsiteAddress, setOffsiteAddress] = useState('');
   const [popupMode, setPopupMode] = useState('checkin');
   const [checkInNote, setCheckInNote] = useState('');
-  const [checkInRecords, setCheckInRecords] = useState(() => {
-    const savedRecords = localStorage.getItem(CHECK_IN_RECORDS_KEY);
-    return savedRecords ? JSON.parse(savedRecords) : [];
-  });
+  const [showLeaveCheckInWarning, setShowLeaveCheckInWarning] = useState(false);
+  const [showAlreadyDonePopup, setShowAlreadyDonePopup] = useState(false);
+  const [localCheckInRecords, setLocalCheckInRecords] = useState(readStoredCheckInRecords);
+  const hasExternalCheckInRecords = Array.isArray(externalCheckInRecords);
+  const checkInRecords = hasExternalCheckInRecords ? externalCheckInRecords : localCheckInRecords;
+  const updateCheckInRecords = (updater) => {
+    const update = typeof updater === 'function'
+      ? updater
+      : () => updater;
+    if (onCheckInRecordsChange) {
+      onCheckInRecordsChange(update);
+    } else {
+      setLocalCheckInRecords(update);
+    }
+  };
 
   useEffect(() => {
-    localStorage.setItem(CHECK_IN_RECORDS_KEY, JSON.stringify(checkInRecords));
-  }, [checkInRecords]);
+    if (!hasExternalCheckInRecords) {
+      writeStoredCheckInRecords(checkInRecords);
+    }
+  }, [checkInRecords, hasExternalCheckInRecords]);
 
   useEffect(() => {
+    if (hasExternalCheckInRecords) return undefined;
+    const syncRecords = (records) => {
+      setLocalCheckInRecords(Array.isArray(records) ? records : []);
+    };
     const handleStorageChange = (event) => {
       if (event.key !== CHECK_IN_RECORDS_KEY) return;
-      setCheckInRecords(event.newValue ? JSON.parse(event.newValue) : []);
+      syncRecords(event.newValue ? JSON.parse(event.newValue) : []);
     };
+    const handleLocalSync = (event) => syncRecords(event.detail);
 
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    window.addEventListener(CHECK_IN_RECORDS_SYNC_EVENT, handleLocalSync);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener(CHECK_IN_RECORDS_SYNC_EVENT, handleLocalSync);
+    };
+  }, [hasExternalCheckInRecords]);
 
   useEffect(() => {
     if (localStorage.getItem(DEMO_SEED_KEY)) return;
@@ -102,7 +188,8 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
       buildRecord(buildPastWeekday(6, 9, 15), 'HAND SE Thonglor', '18:00') // complete record (older)
     ];
 
-    setCheckInRecords((current) => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    updateCheckInRecords((current) => {
       const existingKeys = new Set(current.map((r) => r.id));
       const merged = [...demoRecords.filter((r) => !existingKeys.has(r.id)), ...current];
       return merged;
@@ -113,9 +200,9 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
 
   // Mock user data
   const user = {
-    name: 'Thareeya Uentrakul',
-    position: 'Project Coordinator',
-    employeeId: 'HAND23',
+    name: 'ธรีญา อึ้งตระกูล',
+    position: 'Project coordinator',
+    employeeId: 'H0029',
     company: 'บริษัท แฮนด์ วิสาหกิจเพื่อสังคม จำกัด',
     language: 'English',
     leaveQuota: '5 days',
@@ -153,19 +240,62 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
 
   const todayKey = getDateKey(today);
 
-  const todayCheckIn = userCheckInRecords.find((record) => record.dateKey === todayKey);
+  const todaysUserRecords = userCheckInRecords
+    .filter((record) => record.dateKey === todayKey)
+    .sort((a, b) => getRecordTimeValue(b) - getRecordTimeValue(a));
+  const activeCheckIn = todaysUserRecords.find((record) => !record.checkOutTime);
+  const todayCheckIn = activeCheckIn || todaysUserRecords[0];
 
   const getStatusInfo = (location) => {
     if (!location) return { label: 'ยังไม่เช็คอิน', tone: 'idle' };
     const lower = String(location).toLowerCase();
-    if (lower === 'wfh') return { label: 'Work from home', tone: 'wfh' };
-    if (lower.includes('hand') || lower.includes('krac')) return { label: 'ในสำนักงาน', tone: 'office' };
+    if (lower === 'wfh' || lower.includes('บ้าน')) return { label: 'WFH', tone: 'wfh' };
+    if (lower.includes('hand') || lower.includes('krac') || lower.includes('hq')) {
+      return { label: 'พร้อมทำงาน', tone: 'ready' };
+    }
     return { label: 'นอกสำนักงาน', tone: 'offsite' };
   };
 
+  const getAccountRecords = (account) => {
+    const accountOwnerKey = getUserRecordOwnerKey(account);
+    return checkInRecords.filter((record) =>
+      Boolean(accountOwnerKey) && getRecordOwnerKey(record) === accountOwnerKey
+    );
+  };
+
+  const getTodayRecordForAccount = (account) => {
+    const accountRecords = getAccountRecords(account)
+      .filter((record) => record.dateKey === todayKey)
+      .sort((a, b) => getRecordTimeValue(b) - getRecordTimeValue(a));
+    const activeRecord = accountRecords.find((record) => !record.checkOutTime);
+    return {
+      activeRecord,
+      todayRecord: activeRecord || accountRecords[0]
+    };
+  };
+
+  const getAccountDisplay = (account) => {
+    const nickname =
+      account?.profile?.user?.nicknameTh ||
+      account?.profile?.user?.nameTh ||
+      account?.name ||
+      account?.label ||
+      'User';
+    const role = account?.profile?.job?.roleTh || account?.position || account?.profile?.job?.employeeLevel || 'Employee';
+    const initial =
+      account?.profile?.user?.initial ||
+      nickname
+        .split(' ')
+        .map((namePart) => namePart[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase();
+
+    return { nickname, role, initial };
+  };
+
   const isExemptFromCheckIn =
-    user?.profile?.job?.employeeLevel === 'Board Level' ||
-    user?.profile?.job?.employeeLevel === 'Director Level';
+    isCheckInExemptAccount(user);
 
   const selfNickname = user?.profile?.user?.nicknameTh || user.nickname || 'เพ้นท์';
   const selfRole = user?.position || user?.profile?.job?.roleTh || 'Junior Analyst';
@@ -176,71 +306,98 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     'Personal Leave': 'ลากิจ',
     'Maternity Leave': 'ลาคลอด'
   };
-  const todayApprovedLeave = requests.find((req) => {
-    if (req.status !== 'approved') return false;
-    if (!LEAVE_LABEL[req.type]) return false;
-    if (userOwnerKey && getRecordOwnerKey(req) !== userOwnerKey) return false;
-    const startKey = req.startDateKey || req.dateKey;
-    const endKey = req.endDateKey || startKey;
-    return startKey && todayKey >= startKey && todayKey <= endKey;
-  });
+  const getTodayApprovedLeaveForAccount = (account) => {
+    const accountOwnerKey = getUserRecordOwnerKey(account);
+    return teamRequests.find((req) => {
+      if (req.status !== 'approved') return false;
+      if (!LEAVE_LABEL[req.type]) return false;
+      if (accountOwnerKey && getRecordOwnerKey(req) !== accountOwnerKey) return false;
+      const startKey = req.startDateKey || req.dateKey;
+      const endKey = req.endDateKey || startKey;
+      return startKey && todayKey >= startKey && todayKey <= endKey;
+    });
+  };
+  const todayApprovedLeave = getTodayApprovedLeaveForAccount(user);
+  const getLeaveStatusMessage = (leaveRequest) =>
+    leaveRequest?.note || leaveRequest?.reason || '';
+  const shouldSkipCheckInToday = isExemptFromCheckIn || Boolean(todayApprovedLeave);
+  const shouldBlockCheckInForLeave = Boolean(todayApprovedLeave);
   const selfStatus = todayApprovedLeave
-    ? { label: LEAVE_LABEL[todayApprovedLeave.type], tone: 'leave' }
-    : todayCheckIn?.checkOutTime
-      ? { label: 'เช็คเอาท์แล้ว', tone: 'done' }
-      : getStatusInfo(todayCheckIn?.location);
+    ? { label: 'ลา', tone: 'leave' }
+    : activeCheckIn
+      ? getStatusInfo(activeCheckIn.location)
+      : todayCheckIn?.checkOutTime
+        ? { label: 'เช็คเอาท์แล้ว', tone: 'done' }
+        : { label: 'ยังไม่เช็คอิน', tone: 'idle' };
+  const selfCheckInTime = todayCheckIn?.time || (todayApprovedLeave ? 'วันนี้' : '');
+  const selfLocation = todayApprovedLeave
+    ? LEAVE_LABEL[todayApprovedLeave.type]
+    : todayCheckIn?.location || '';
+  const selfStatusMessage = todayApprovedLeave
+    ? getLeaveStatusMessage(todayApprovedLeave)
+    : activeCheckIn?.note || todayCheckIn?.note || '';
 
+  const currentOwnerKey = getUserRecordOwnerKey(user);
+  const currentUserDepartment = user?.profile?.job?.department || '';
+  const isBoardViewer = currentUserDepartment === 'Board of Directors';
+  const isSelfDirector = isDirectorAccount(user);
+  const selfTeamMember = isExemptFromCheckIn && !(isSelfDirector && todayApprovedLeave)
+    ? []
+    : [{
+        id: user?.id || user?.userType || 'self',
+        nickname: selfNickname,
+        role: selfRole,
+        initial: selfInitial,
+        accent: TEAM_MOCK_STATUS[user?.userType]?.accent || '#C4895A',
+        status: selfStatus,
+        checkInTime: selfCheckInTime,
+        location: selfLocation,
+        statusMessage: selfStatusMessage,
+        hideCheckIn: shouldSkipCheckInToday,
+        isSelf: true
+      }];
   const teamMembers = [
-    {
-      id: 'self',
-      nickname: selfNickname,
-      role: selfRole,
-      initial: selfInitial,
-      accent: '#C4895A',
-      status: selfStatus,
-      checkInTime: todayCheckIn?.time,
-      checkOutTime: todayCheckIn?.checkOutTime,
-      location: todayCheckIn?.location,
-      note: todayCheckIn?.note,
-      isSelf: true
-    },
-    {
-      id: 'tm-jen',
-      nickname: 'เจน',
-      role: 'Project Manager',
-      initial: 'J',
-      accent: '#9ec5d8',
-      status: { label: 'ในสำนักงาน', tone: 'office' },
-      checkInTime: '08:42',
-      location: 'HAND SE Thonglor'
-    },
-    {
-      id: 'tm-boss',
-      nickname: 'บอส',
-      role: 'Senior Designer',
-      initial: 'B',
-      accent: '#a3d4a7',
-      status: { label: 'Work from home', tone: 'wfh' },
-      checkInTime: '09:10',
-      checkOutTime: '17:30',
-      location: 'WFH',
-      note: 'ปิดงาน design system ถึง 18:00'
-    },
-    {
-      id: 'tm-mim',
-      nickname: 'มิ้ม',
-      role: 'Researcher',
-      initial: 'M',
-      accent: '#d9b0e3',
-      status: { label: 'ลาพักร้อน', tone: 'leave' },
-      note: 'ลาพักร้อน 12 - 13 พ.ค.'
-    }
+    ...selfTeamMember,
+    ...CHECK_IN_USER_TYPES
+      .filter((account) => {
+        const accountApprovedLeave = getTodayApprovedLeaveForAccount(account);
+        if (getUserRecordOwnerKey(account) === currentOwnerKey) return false;
+        if (!isBoardViewer && account?.profile?.job?.department !== currentUserDepartment) return false;
+        if (!isCheckInExemptAccount(account)) return true;
+        return isDirectorAccount(account) && Boolean(accountApprovedLeave);
+      })
+      .map((account, index) => {
+        const display = getAccountDisplay(account);
+        const fallback = TEAM_MOCK_STATUS[account.id] || TEAM_MOCK_STATUS.employee;
+        const isExemptAccount = isCheckInExemptAccount(account);
+        const accountApprovedLeave = getTodayApprovedLeaveForAccount(account);
+        const { activeRecord, todayRecord } = isExemptAccount
+          ? { activeRecord: null, todayRecord: null }
+          : getTodayRecordForAccount(account);
+        const recordStatus = accountApprovedLeave
+          ? { label: 'ลา', tone: 'leave' }
+          : isExemptAccount
+          ? null
+          : activeRecord
+            ? getStatusInfo(activeRecord.location)
+            : todayRecord?.checkOutTime
+              ? { label: 'เช็คเอาท์แล้ว', tone: 'done' }
+              : null;
+        const hasTodayRecord = Boolean(todayRecord);
+
+        return {
+          id: account.id,
+          ...display,
+          accent: fallback.accent || TEAM_ACCENTS[index % TEAM_ACCENTS.length],
+          status: recordStatus || (hasTodayRecord ? fallback.status : { label: 'ยังไม่เช็คอิน', tone: 'idle' }),
+          checkInTime: accountApprovedLeave ? 'วันนี้' : todayRecord?.time || (hasTodayRecord ? fallback.checkInTime : ''),
+          location: accountApprovedLeave ? LEAVE_LABEL[accountApprovedLeave.type] : todayRecord?.location || (hasTodayRecord ? fallback.location : ''),
+          statusMessage: accountApprovedLeave ? getLeaveStatusMessage(accountApprovedLeave) : activeRecord?.note || todayRecord?.note || '',
+          hideCheckIn: isExemptAccount || Boolean(accountApprovedLeave)
+        };
+      })
+      .filter((member) => member.status)
   ];
-
-  const activeCheckIn = userCheckInRecords.find(
-    (record) => record.dateKey === todayKey && !record.checkOutTime
-  );
-
   const closeCheckInPopup = () => {
     setShowCheckInPopup(false);
     setSelectedCheckInLocation('');
@@ -249,7 +406,24 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     setPopupMode('checkin');
   };
 
+  useEffect(() => {
+    if (!todayApprovedLeave) return;
+    if (localStorage.getItem(LEAVE_CHECKIN_WARNING_KEY) !== '1') return;
+    localStorage.removeItem(LEAVE_CHECKIN_WARNING_KEY);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setShowLeaveCheckInWarning(true);
+  }, [todayApprovedLeave]);
+
   const openCheckInPopup = () => {
+    if (shouldBlockCheckInForLeave) {
+      setShowLeaveCheckInWarning(true);
+      return;
+    }
+    if (isExemptFromCheckIn) return;
+    if (!activeCheckIn && todayCheckIn?.checkOutTime) {
+      setShowAlreadyDonePopup(true);
+      return;
+    }
     if (activeCheckIn) {
       setPopupMode('checkout');
     } else {
@@ -262,13 +436,18 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
   const handleSubmitCheckIn = () => {
+    if (shouldBlockCheckInForLeave) {
+      setShowLeaveCheckInWarning(true);
+      return;
+    }
+    if (isExemptFromCheckIn) return;
     const checkedInAt = new Date();
     const location =
       selectedCheckInLocation === 'Offsite'
         ? offsiteAddress.trim()
         : selectedCheckInLocation;
 
-    setCheckInRecords((currentRecords) => [
+    updateCheckInRecords((currentRecords) => [
       {
         id: checkedInAt.toISOString(),
         dateKey: getDateKey(checkedInAt),
@@ -295,9 +474,13 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
   };
 
   const handleSubmitCheckOut = () => {
-    if (!activeCheckIn) return;
+    if (shouldBlockCheckInForLeave) {
+      setShowLeaveCheckInWarning(true);
+      return;
+    }
+    if (isExemptFromCheckIn || !activeCheckIn) return;
     const checkedOutAt = new Date();
-    setCheckInRecords((currentRecords) =>
+    updateCheckInRecords((currentRecords) =>
       currentRecords.map((record) =>
         record.id === activeCheckIn.id
           ? { ...record, checkOutTime: formatTime(checkedOutAt), status: 'Checked out' }
@@ -308,7 +491,7 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
   };
 
   const handleDeleteCheckInRecord = (recordId) => {
-    setCheckInRecords((currentRecords) =>
+    updateCheckInRecords((currentRecords) =>
       currentRecords.filter((record) => record.id !== recordId)
     );
   };
@@ -317,13 +500,15 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
     return (
       <Record
         records={userCheckInRecords}
+        currentUser={user}
         onDeleteRecord={handleDeleteCheckInRecord}
         onGoHome={() => setActivePage('home')}
         onGoAccount={onGoAccount || (() => setActivePage('account'))}
         onOpenCheckIn={() => {
           setActivePage('home');
-          setShowCheckInPopup(true);
+          openCheckInPopup();
         }}
+        isCheckInDisabled={isExemptFromCheckIn}
       />
     );
   }
@@ -337,8 +522,9 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
         onGoRequest={onGoRequest || (() => setActivePage('request'))}
         onOpenCheckIn={() => {
           setActivePage('home');
-          setShowCheckInPopup(true);
+          openCheckInPopup();
         }}
+        isCheckInDisabled={isExemptFromCheckIn}
       />
     );
   }
@@ -366,8 +552,9 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
         onGoAccount={onGoAccount || (() => setActivePage('account'))}
         onOpenCheckIn={() => {
           setActivePage('home');
-          setShowCheckInPopup(true);
+          openCheckInPopup();
         }}
+        isCheckInDisabled={isExemptFromCheckIn}
       />
     );
   }
@@ -396,7 +583,24 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
 
           <div className="welcome-card__divider" />
 
-          {todayCheckIn ? (
+          {todayApprovedLeave ? (
+            <div className="dashboard-today dashboard-today--leave">
+              <div className="dashboard-today-status">
+                <MdCheckCircle />
+                <strong>คำลาได้รับการอนุมัติแล้ว</strong>
+              </div>
+              <dl className="dashboard-today-meta">
+                <div>
+                  <dt>Leave</dt>
+                  <dd>{LEAVE_LABEL[todayApprovedLeave.type] || todayApprovedLeave.type}</dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>ไม่ต้อง Check in วันนี้</dd>
+                </div>
+              </dl>
+            </div>
+          ) : todayCheckIn ? (
             <div className="dashboard-today dashboard-today--in">
               <div className="dashboard-today-status">
                 <MdCheckCircle />
@@ -422,7 +626,7 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
               </dl>
             </div>
           ) : (
-            !isExemptFromCheckIn && (
+            !shouldSkipCheckInToday && (
               <div className="dashboard-today dashboard-today--out">
                 <div className="dashboard-today-status">
                   <MdWarningAmber />
@@ -431,7 +635,7 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
               </div>
             )
           )}
-          {!isExemptFromCheckIn && !todayCheckIn?.checkOutTime && (
+          {!shouldSkipCheckInToday && !todayCheckIn?.checkOutTime && (
             <button
               type="button"
               className={`dashboard-primary-btn ${activeCheckIn ? 'dashboard-primary-btn--out' : 'dashboard-primary-btn--in'}`}
@@ -457,11 +661,14 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
               >
                 <header className="team-card__head">
                   <div className="team-card__person">
-                    <div className="team-card__avatar">
+                    <div className="team-card__avatar" style={{ '--team-accent': member.accent }}>
                       {member.initial}
                     </div>
                     <div className="team-card__id">
-                      <strong>{member.nickname}{member.isSelf && <small>คุณ</small>}</strong>
+                      <strong>
+                        {member.nickname}
+                        {member.isSelf && <small>คุณ</small>}
+                      </strong>
                       <span>{member.role}</span>
                     </div>
                   </div>
@@ -470,29 +677,15 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
                     {member.status.label}
                   </div>
                 </header>
-                {(member.checkInTime || member.checkOutTime || member.location) && (
-                  <dl className="team-card__meta">
-                    {member.checkInTime && (
-                      <div>
-                        <dt>Check-in</dt>
-                        <dd>{member.checkInTime}</dd>
-                      </div>
-                    )}
-                    {member.checkOutTime && (
-                      <div>
-                        <dt>Check-out</dt>
-                        <dd>{member.checkOutTime}</dd>
-                      </div>
-                    )}
-                    {member.location && (
-                      <div>
-                        <dt>Where</dt>
-                        <dd>{member.location}</dd>
-                      </div>
-                    )}
-                  </dl>
+                {!member.hideCheckIn && (
+                  <div className="team-card__workline">
+                    <span>{member.checkInTime || 'วันนี้'}</span>
+                    <span>{member.location || 'ไม่อยู่ในระบบ check-in'}</span>
+                  </div>
                 )}
-                {member.note && <p className="team-card__note">{member.note}</p>}
+                {member.statusMessage && (
+                  <p className="team-card__note">{member.statusMessage}</p>
+                )}
               </article>
             ))}
           </div>
@@ -501,35 +694,70 @@ export default function Landing({ user: currentUser, requests = [], onGoRecord, 
       </div>
 
       {/* Bottom Navigation */}
-      <div className="bottom-nav">
-        <button className="nav-item active">
-          <span className="nav-icon"><MdHome /></span>
-          <span className="nav-label">Home</span>
-        </button>
-        {!isExemptFromCheckIn && (
-          <button className="nav-item" onClick={onGoRecord || (() => setActivePage('record'))}>
-            <span className="nav-icon"><MdAccessTime /></span>
-            <span className="nav-label">Record</span>
-          </button>
-        )}
-        {!isExemptFromCheckIn && (
-          <button
-            className="nav-item center"
-            onClick={openCheckInPopup}
-            aria-label={activeCheckIn ? 'Open check out' : 'Open check in'}
-          >
-            <span className="nav-icon large"><MdSchedule /></span>
-          </button>
-        )}
-        <button className="nav-item" onClick={onGoRequest || (() => setActivePage('request'))}>
-          <span className="nav-icon"><MdAssignment /></span>
-          <span className="nav-label">Requests</span>
-        </button>
-        <button className="nav-item" onClick={onGoAccount || (() => setActivePage('account'))}>
-          <span className="nav-icon"><MdPerson /></span>
-          <span className="nav-label">My Account</span>
-        </button>
-      </div>
+      <BottomNav
+        activePage="home"
+        isExemptFromCheckIn={isExemptFromCheckIn}
+        onGoHome={undefined}
+        onGoRecord={onGoRecord || (() => setActivePage('record'))}
+        onOpenCheckIn={openCheckInPopup}
+        onGoRequest={onGoRequest || (() => setActivePage('request'))}
+        onGoAccount={onGoAccount || (() => setActivePage('account'))}
+        checkInAriaLabel={activeCheckIn ? 'Open check out' : 'Open check in'}
+      />
+
+      {showLeaveCheckInWarning && (
+        <div className="checkin-overlay" onClick={() => setShowLeaveCheckInWarning(false)}>
+          <div className="checkin-popup checkin-popup--notice" onClick={(event) => event.stopPropagation()}>
+            <div className="checkin-header">
+              <div>
+                <h3>ไม่ต้อง Check in วันนี้</h3>
+              </div>
+              <button className="checkin-close" onClick={() => setShowLeaveCheckInWarning(false)} aria-label="Close">
+                <MdClose />
+              </button>
+            </div>
+            <div className="checkin-notice">
+              <MdCheckCircle />
+              <strong>คำลาได้รับการอนุมัติแล้ว</strong>
+              <p>
+                วันนี้เป็นวันลา {LEAVE_LABEL[todayApprovedLeave?.type] || todayApprovedLeave?.type || ''}
+                จึงไม่ต้อง Check in
+              </p>
+            </div>
+            <button className="checkin-submit" onClick={() => setShowLeaveCheckInWarning(false)}>
+              รับทราบ
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showAlreadyDonePopup && (
+        <div className="checkin-overlay" onClick={() => setShowAlreadyDonePopup(false)}>
+          <div className="checkin-popup checkin-popup--notice" onClick={(event) => event.stopPropagation()}>
+            <div className="checkin-header">
+              <div>
+                <h3>เช็คอิน/เช็คเอาท์แล้ววันนี้</h3>
+              </div>
+              <button className="checkin-close" onClick={() => setShowAlreadyDonePopup(false)} aria-label="Close">
+                <MdClose />
+              </button>
+            </div>
+            <div className="checkin-notice">
+              <MdCheckCircle />
+              <strong>คุณได้เช็คอินและเช็คเอาท์ของวันนี้เรียบร้อยแล้ว</strong>
+              <p>
+                ไม่สามารถกดเช็คอินหรือเช็คเอาท์ซ้ำในวันเดียวกันได้
+                {todayCheckIn?.time && todayCheckIn?.checkOutTime && (
+                  <> · เช็คอิน {todayCheckIn.time} · เช็คเอาท์ {todayCheckIn.checkOutTime}</>
+                )}
+              </p>
+            </div>
+            <button className="checkin-submit" onClick={() => setShowAlreadyDonePopup(false)}>
+              รับทราบ
+            </button>
+          </div>
+        </div>
+      )}
 
       {showCheckInPopup && (
         <div className="checkin-overlay" onClick={closeCheckInPopup}>

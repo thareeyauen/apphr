@@ -52,7 +52,7 @@
   border-radius: 10px;
   background: #C4895A;
   color: #fff;
-  font-family: 'Sarabun', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  font-family: var(--up-font-thai);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -74,9 +74,6 @@
   --up-accent: #C4895A;
   --up-accent-soft: #F5E6D6;
   --up-accent-dark: #A06D40;
-  --up-font-thai: 'Sarabun','IBM Plex Sans Thai',system-ui,sans-serif;
-  --up-font-sans: 'Inter Tight','IBM Plex Sans Thai',system-ui,sans-serif;
-  --up-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   min-height: 100vh;
   box-sizing: border-box;

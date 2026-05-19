@@ -1,17 +1,25 @@
+import { useState } from 'react';
 import { MdArrowForward } from 'react-icons/md';
 import './Login.css';
-import { DEFAULT_USER_TYPE, getUserType, getUserTypeByEmail } from './userTypes';
 
-export default function Login({ onSignIn }) {
+export default function Login({ users = [], onSignIn }) {
+  const [error, setError] = useState('');
+
   const handleSubmit = (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') || '';
-    const matchedUser = getUserTypeByEmail(email) || getUserType(DEFAULT_USER_TYPE);
+    const email = String(formData.get('email') || '').trim();
+    const password = String(formData.get('password') || '');
+    const normalizedEmail = email.toLowerCase();
+    const matchedUser = users.find((user) => user.email?.toLowerCase() === normalizedEmail);
+
+    if (!matchedUser || matchedUser.password !== password) {
+      setError('Email or password is incorrect');
+      return;
+    }
 
     onSignIn({
-      ...matchedUser,
-      email: email || matchedUser.email
+      ...matchedUser
     });
   };
 
@@ -21,14 +29,16 @@ export default function Login({ onSignIn }) {
         <p className="login-welcome">Welcome...</p>
 
         <label className="login-field">
-          <span>Work email</span>
-          <input name="email" type="email" autoComplete="email" />
+          <span>E-mail</span>
+          <input name="email" type="email" autoComplete="email" onChange={() => setError('')} />
         </label>
 
         <label className="login-field">
           <span>Password</span>
-          <input name="password" type="password" autoComplete="current-password" />
+          <input name="password" type="password" autoComplete="current-password" onChange={() => setError('')} />
         </label>
+
+        {error && <p className="login-error">{error}</p>}
 
         <button className="login-submit" type="submit">
           <span>Sign in</span>

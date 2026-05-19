@@ -8,11 +8,15 @@ import Outside from './User/Outside'
 import Record from './User/Record'
 import Request from './User/Request'
 import Requestdoc from './User/Requestdoc'
-import { DEFAULT_USER_TYPE, getUserType } from './User/userTypes'
+import { DEFAULT_USER_TYPE, USER_TYPES, getUserType } from './User/userTypes'
 
 const CHECK_IN_RECORDS_KEY = 'apphr-checkin-records'
+const CHECK_IN_RECORDS_SYNC_EVENT = 'apphr-checkin-records-sync'
 const CURRENT_USER_KEY = 'apphr-current-user'
 const REQUEST_RECORDS_KEY = 'apphr-request-records'
+const USER_ACCOUNT_OVERRIDES_KEY = 'apphr-user-account-overrides'
+const LEAVE_CHECKIN_WARNING_KEY = 'apphr-show-leave-checkin-warning'
+const REQUEST_APPROVER_LEVELS = ['Board Level', 'Director Level']
 
 const baseUser = {
   company: 'บริษัท แฮนด์ วิสาหกิจเพื่อสังคม จำกัด',
@@ -45,6 +49,71 @@ const getDateKey = (date) => {
   return `${year}-${month}-${day}`
 }
 
+const readStoredCheckInRecords = () => {
+  const savedRecords = localStorage.getItem(CHECK_IN_RECORDS_KEY)
+  return savedRecords ? JSON.parse(savedRecords) : []
+}
+
+const readStoredUserOverrides = () => {
+  const savedOverrides = localStorage.getItem(USER_ACCOUNT_OVERRIDES_KEY)
+  if (!savedOverrides) return {}
+  try {
+    const parsedOverrides = JSON.parse(savedOverrides)
+    return parsedOverrides && typeof parsedOverrides === 'object' ? parsedOverrides : {}
+  } catch {
+    return {}
+  }
+}
+
+const hasSavedUserChanges = (savedUser, baseUserData) =>
+  savedUser?.password !== baseUserData?.password ||
+  savedUser?.email !== baseUserData?.email ||
+  savedUser?.name !== baseUserData?.name ||
+  JSON.stringify(savedUser?.profile?.user || {}) !== JSON.stringify(baseUserData?.profile?.user || {})
+
+const readInitialUserOverrides = () => {
+  const storedOverrides = readStoredUserOverrides()
+  const savedUser = localStorage.getItem(CURRENT_USER_KEY)
+  if (!savedUser) return storedOverrides
+
+  try {
+    const parsedUser = JSON.parse(savedUser)
+    const baseUserData = USER_TYPES.find((type) => type.id === parsedUser?.id)
+    if (!baseUserData || !hasSavedUserChanges(parsedUser, baseUserData)) {
+      return storedOverrides
+    }
+
+    return {
+      ...storedOverrides,
+      [parsedUser.id]: mergeUserAccount(storedOverrides[parsedUser.id] || {}, parsedUser)
+    }
+  } catch {
+    return storedOverrides
+  }
+}
+
+const mergeUserAccount = (baseUserData, override = {}) => ({
+  ...baseUserData,
+  ...override,
+  profile: {
+    ...baseUserData.profile,
+    ...override.profile,
+    user: {
+      ...baseUserData.profile?.user,
+      ...override.profile?.user
+    },
+    job: {
+      ...baseUserData.profile?.job,
+      ...override.profile?.job,
+      bank: {
+        ...baseUserData.profile?.job?.bank,
+        ...override.profile?.job?.bank
+      }
+    },
+    documents: override.profile?.documents || baseUserData.profile?.documents || []
+  }
+})
+
 const THAI_MONTH_MAP = {
   'ม.ค.': '01', 'ก.พ.': '02', 'มี.ค.': '03', 'เม.ย.': '04',
   'พ.ค.': '05', 'มิ.ย.': '06', 'ก.ค.': '07', 'ส.ค.': '08',
@@ -69,15 +138,39 @@ const ensureRequestDateKey = (record) => {
   return derived ? { ...record, dateKey: derived } : record
 }
 
+const getRequestApproverLevels = (record) => {
+  if (Array.isArray(record?.approverLevels)) return record.approverLevels
+  if (typeof record?.approverLevel === 'string') return [record.approverLevel]
+  return REQUEST_APPROVER_LEVELS
+}
+
+const isRequestAssignedToLevel = (record, employeeLevel) =>
+  Boolean(employeeLevel) && getRequestApproverLevels(record).includes(employeeLevel)
+
+const getApproverLevelsForRequester = (requester) =>
+  requester?.profile?.job?.employeeLevel === 'Director Level'
+    ? ['Board Level']
+    : REQUEST_APPROVER_LEVELS
+
 function App() {
   const [path, setPath] = useState(window.location.pathname)
+  const [userOverrides, setUserOverrides] = useState(() => readInitialUserOverrides())
   const [signedInUser, setSignedInUser] = useState(() => {
+    const storedOverrides = readStoredUserOverrides()
     const savedUser = localStorage.getItem(CURRENT_USER_KEY)
-    return savedUser ? JSON.parse(savedUser) : getUserType(DEFAULT_USER_TYPE)
+    if (!savedUser) {
+      const defaultUser = getUserType(DEFAULT_USER_TYPE)
+      return mergeUserAccount(defaultUser, storedOverrides[defaultUser.id])
+    }
+    const parsedUser = JSON.parse(savedUser)
+    if (USER_TYPES.some((type) => type.id === parsedUser?.id)) {
+      return mergeUserAccount(parsedUser, storedOverrides[parsedUser.id])
+    }
+    const defaultUser = getUserType(DEFAULT_USER_TYPE)
+    return mergeUserAccount(defaultUser, storedOverrides[defaultUser.id])
   })
   const [checkInRecords, setCheckInRecords] = useState(() => {
-    const savedRecords = localStorage.getItem(CHECK_IN_RECORDS_KEY)
-    return savedRecords ? JSON.parse(savedRecords) : []
+    return readStoredCheckInRecords()
   })
   const [requestRecords, setRequestRecords] = useState(() => {
     const savedRequests = localStorage.getItem(REQUEST_RECORDS_KEY)
@@ -98,11 +191,36 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem(CHECK_IN_RECORDS_KEY, JSON.stringify(checkInRecords))
+    window.dispatchEvent(
+      new CustomEvent(CHECK_IN_RECORDS_SYNC_EVENT, { detail: checkInRecords })
+    )
   }, [checkInRecords])
+
+  useEffect(() => {
+    const syncRecords = (records) => {
+      setCheckInRecords(Array.isArray(records) ? records : [])
+    }
+    const handleStorageChange = (event) => {
+      if (event.key !== CHECK_IN_RECORDS_KEY) return
+      syncRecords(event.newValue ? JSON.parse(event.newValue) : [])
+    }
+    const handleLocalSync = (event) => syncRecords(event.detail)
+
+    window.addEventListener('storage', handleStorageChange)
+    window.addEventListener(CHECK_IN_RECORDS_SYNC_EVENT, handleLocalSync)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener(CHECK_IN_RECORDS_SYNC_EVENT, handleLocalSync)
+    }
+  }, [])
 
   useEffect(() => {
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(signedInUser))
   }, [signedInUser])
+
+  useEffect(() => {
+    localStorage.setItem(USER_ACCOUNT_OVERRIDES_KEY, JSON.stringify(userOverrides))
+  }, [userOverrides])
 
   useEffect(() => {
     localStorage.setItem(REQUEST_RECORDS_KEY, JSON.stringify(requestRecords))
@@ -131,7 +249,8 @@ function App() {
       id: `REQ-${String(date.getTime()).slice(-6)}`,
       date: formatRequestDate(date),
       dateKey: getDateKey(date),
-      approver: 'คุณวิชัย ส.',
+      approver: 'Board Level / Director Level',
+      approverLevels: REQUEST_APPROVER_LEVELS,
       status,
       type,
       detail: 'Demo entry',
@@ -148,6 +267,7 @@ function App() {
       buildRequest(buildPastWeekday(8, 9, 0), 'Work Outside', 'rejected')
     ]
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRequestRecords((current) => {
       const existingIds = new Set(current.map((r) => r.id))
       return [...demoRequests.filter((r) => !existingIds.has(r.id)), ...current]
@@ -167,11 +287,6 @@ function App() {
   }, [path])
 
   const navigate = (nextPath) => {
-    if (nextPath === '/record') {
-      const savedRecords = localStorage.getItem(CHECK_IN_RECORDS_KEY)
-      setCheckInRecords(savedRecords ? JSON.parse(savedRecords) : [])
-    }
-
     window.history.pushState({}, '', nextPath)
     setPath(nextPath)
   }
@@ -185,6 +300,7 @@ function App() {
   const createRequestRecord = (request) => {
     const createdAt = new Date()
     const ownerKey = getUserRecordOwnerKey(currentUser)
+    const approverLevels = getApproverLevelsForRequester(currentUser)
     const startDateKey = typeof request?.startDateKey === 'string' ? request.startDateKey : null
     const effectiveDateKey = startDateKey || getDateKey(createdAt)
     const effectiveDate = startDateKey
@@ -194,14 +310,15 @@ function App() {
     setRequestRecords((currentRequests) => [
       {
         id: `REQ-${String(createdAt.getTime()).slice(-6)}`,
-        approver: 'คุณวิชัย ส.',
-        status: 'pending',
         ownerKey,
         employeeId: currentUser.employeeId,
         email: currentUser.email,
         userId: currentUser.userType,
         userName: currentUser.name,
         ...request,
+        approver: approverLevels.join(' / '),
+        approverLevels,
+        status: 'pending',
         date: effectiveDate,
         dateKey: effectiveDateKey
       },
@@ -235,20 +352,28 @@ function App() {
   }
 
   const updateCurrentUser = (userPatch) => {
-    setSignedInUser((currentUserData) => ({
-      ...currentUserData,
-      ...userPatch,
-      profile: {
-        ...currentUserData.profile,
-        ...userPatch.profile
+    setSignedInUser((currentUserData) => {
+      const nextUserData = mergeUserAccount(currentUserData, userPatch)
+      const accountId = nextUserData.id || currentUserData.id
+
+      if (accountId) {
+        setUserOverrides((currentOverrides) => ({
+          ...currentOverrides,
+          [accountId]: mergeUserAccount(currentOverrides[accountId] || {}, userPatch)
+        }))
       }
-    }))
+
+      return nextUserData
+    })
   }
 
   const currentUserType = getUserType(signedInUser?.id || DEFAULT_USER_TYPE)
+  const userAccounts = USER_TYPES.map((userType) =>
+    mergeUserAccount(userType, userOverrides[userType.id])
+  )
   const currentUser = {
     ...baseUser,
-    ...currentUserType,
+    ...mergeUserAccount(currentUserType, userOverrides[currentUserType.id]),
     ...signedInUser,
     userType: currentUserType.id,
     userTypeLabel: currentUserType.label
@@ -260,12 +385,33 @@ function App() {
   const isApprover =
     currentUserLevel === 'Board Level' || currentUserLevel === 'Director Level'
   const currentUserRequests = isApprover
-    ? requestRecords
+    ? requestRecords.filter((record) =>
+        isRequestAssignedToLevel(record, currentUserLevel) ||
+        isRecordOwnedByUser(record, currentUser)
+      )
     : requestRecords.filter((record) => isRecordOwnedByUser(record, currentUser))
+  const teamStatusRequests = requestRecords.filter((record) =>
+    record.status === 'approved' &&
+    ['Annual Leave', 'Sick Leave', 'Personal Leave', 'Maternity Leave'].includes(record.type)
+  )
+  const todayKey = getDateKey(new Date())
+  const currentUserHasApprovedLeaveToday = teamStatusRequests.some((record) => {
+    if (!isRecordOwnedByUser(record, currentUser)) return false
+    const startKey = record.startDateKey || record.dateKey
+    const endKey = record.endDateKey || startKey
+    return startKey && todayKey >= startKey && todayKey <= endKey
+  })
+  const openCheckInFromNavigation = () => {
+    if (currentUserHasApprovedLeaveToday) {
+      localStorage.setItem(LEAVE_CHECKIN_WARNING_KEY, '1')
+    }
+    navigate('/home')
+  }
 
   if (path === '/login') {
     return (
       <Login
+        users={userAccounts}
         onSignIn={(nextUser) => {
           setSignedInUser(nextUser)
           navigate('/home')
@@ -283,7 +429,7 @@ function App() {
         onGoHome={() => navigate('/home')}
         onGoAccount={() => navigate('/account')}
         onGoRequest={() => navigate('/request')}
-        onOpenCheckIn={() => navigate('/home')}
+        onOpenCheckIn={openCheckInFromNavigation}
       />
     )
   }
@@ -305,7 +451,7 @@ function App() {
         onGoHome={() => navigate('/home')}
         onGoRecord={() => navigate('/record')}
         onGoAccount={() => navigate('/account')}
-        onOpenCheckIn={() => navigate('/home')}
+        onOpenCheckIn={openCheckInFromNavigation}
       />
     )
   }
@@ -321,7 +467,7 @@ function App() {
         onGoRecord={() => navigate('/record')}
         onGoRequest={() => navigate('/request')}
         onGoAccount={() => navigate('/account')}
-        onOpenCheckIn={() => navigate('/home')}
+        onOpenCheckIn={openCheckInFromNavigation}
       />
     )
   }
@@ -336,7 +482,7 @@ function App() {
         onGoRecord={() => navigate('/record')}
         onGoRequest={() => navigate('/request')}
         onGoAccount={() => navigate('/account')}
-        onOpenCheckIn={() => navigate('/home')}
+        onOpenCheckIn={openCheckInFromNavigation}
       />
     )
   }
@@ -351,7 +497,7 @@ function App() {
         onGoRecord={() => navigate('/record')}
         onGoRequest={() => navigate('/request')}
         onGoAccount={() => navigate('/account')}
-        onOpenCheckIn={() => navigate('/home')}
+        onOpenCheckIn={openCheckInFromNavigation}
       />
     )
   }
@@ -366,7 +512,7 @@ function App() {
         onGoRecord={() => navigate('/record')}
         onGoRequest={() => navigate('/request')}
         onGoAccount={() => navigate('/account')}
-        onOpenCheckIn={() => navigate('/home')}
+        onOpenCheckIn={openCheckInFromNavigation}
       />
     )
   }
@@ -379,7 +525,7 @@ function App() {
         onGoHome={() => navigate('/home')}
         onGoRecord={() => navigate('/record')}
         onGoRequest={() => navigate('/request')}
-        onOpenCheckIn={() => navigate('/home')}
+        onOpenCheckIn={openCheckInFromNavigation}
         onLogout={() => {
           localStorage.removeItem(CURRENT_USER_KEY)
           setSignedInUser(getUserType(DEFAULT_USER_TYPE))
@@ -393,6 +539,9 @@ function App() {
     <Landing
       user={currentUser}
       requests={currentUserRequests}
+      teamRequests={teamStatusRequests}
+      checkInRecords={checkInRecords}
+      onCheckInRecordsChange={setCheckInRecords}
       onGoRecord={() => navigate('/record')}
       onGoRequest={() => navigate('/request')}
       onGoAccount={() => navigate('/account')}

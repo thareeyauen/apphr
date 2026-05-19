@@ -10,9 +10,6 @@
   --up-accent-soft: #F5E6D6;
   --up-accent-dark: #A06D40;
   --up-good: #3f7e5b;
-  --up-font-thai: 'Sarabun','IBM Plex Sans Thai',system-ui,sans-serif;
-  --up-font-sans: 'Inter Tight','IBM Plex Sans Thai',system-ui,sans-serif;
-  --up-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   min-height: 100vh;
   box-sizing: border-box;
@@ -260,6 +257,11 @@
   align-items: center;
 }
 
+.request-table__head--review,
+.request-row--review {
+  grid-template-columns: 112px minmax(130px, 170px) minmax(180px, 1fr) 130px 150px 118px 90px;
+}
+
 .request-table__head {
   padding: 12px 14px;
   border-bottom: 1px solid var(--up-line-soft);
@@ -301,10 +303,33 @@
 
 .request-row__type-detail,
 .request-row__date,
-.request-row__approver {
+.request-row__approver,
+.request-row__submitter {
   color: var(--up-ink-2);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.request-row__submitter {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.request-row__submitter strong {
+  overflow: hidden;
+  color: var(--up-ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.request-row__submitter span {
+  color: var(--up-ink-3);
+  font-family: var(--up-font-mono);
+  font-size: 11px;
 }
 
 .request-badge {
@@ -836,8 +861,20 @@
     padding: 14px;
   }
 
+  .request-row--review {
+    grid-template-areas:
+      'id status'
+      'submitter submitter'
+      'type type'
+      'date action';
+  }
+
   .request-row__id {
     grid-area: id;
+  }
+
+  .request-row__submitter {
+    grid-area: submitter;
   }
 
   .request-row__type {

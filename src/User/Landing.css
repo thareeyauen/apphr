@@ -667,6 +667,10 @@
   text-align: left;
 }
 
+.checkin-popup--notice {
+  max-width: 380px;
+}
+
 .checkin-header {
   display: flex;
   align-items: center;
@@ -766,6 +770,34 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.checkin-notice {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 10px 4px 20px;
+  color: var(--up-ink-2);
+  text-align: center;
+}
+
+.checkin-notice svg {
+  width: 44px;
+  height: 44px;
+  color: #b3261e;
+}
+
+.checkin-notice strong {
+  color: var(--up-ink);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.checkin-notice p {
+  max-width: 280px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .checkin-option {
@@ -1213,7 +1245,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Inter Tight', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  font-family: var(--up-font-sans);
   font-size: 20px;
   font-weight: 600;
   flex-shrink: 0;
@@ -1241,7 +1273,7 @@
 
 .welcome-card__name {
   margin: 0;
-  font-family: 'Inter Tight', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  font-family: var(--up-font-sans);
   font-size: 22px;
   font-weight: 600;
   color: #1A1A1A;
@@ -1298,25 +1330,18 @@
   }
 
   .welcome-card__name {
-    font-size: 19px;
-  }
-
-  .team-card__meta {
-    padding-left: 0;
-    gap: 18px;
-  }
-
-  .team-card__note {
-    margin-left: 0;
+    font-size: 17px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .team-card__head {
-    flex-wrap: wrap;
-    gap: 8px;
+    align-items: flex-start;
   }
 
   .team-card__status {
-    margin-left: 54px;
+    align-self: flex-start;
   }
 }
 
@@ -1338,7 +1363,7 @@
 
 .dashboard-card__head h3 {
   margin: 0;
-  font-family: 'Inter Tight', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  font-family: var(--up-font-sans);
   font-size: 14px;
   font-weight: 600;
   color: #1A1A1A;
@@ -1382,6 +1407,10 @@
   color: #C4895A;
 }
 
+.dashboard-today--leave .dashboard-today-status svg {
+  color: #C45A5A;
+}
+
 .dashboard-today-meta {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1405,7 +1434,7 @@
 }
 
 .dashboard-today-meta dd {
-  font-family: 'Inter Tight', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  font-family: var(--up-font-sans);
   font-size: 15px;
   color: #1A1A1A;
   font-weight: 600;
@@ -1447,7 +1476,7 @@
   padding: 16px 20px;
   border: 1px solid transparent;
   border-radius: 999px;
-  font-family: 'Inter Tight', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  font-family: var(--up-font-sans);
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -1486,34 +1515,25 @@
 }
 
 .team-status-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.team-card {
-  border: none;
-  border-top: 1px solid #E8E3D8;
-  border-radius: 0;
-  background: transparent;
-  padding: 18px 2px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
-.team-card:first-child {
-  border-top: none;
-  padding-top: 4px;
-}
-
-.team-card:last-child {
-  padding-bottom: 4px;
+.team-card {
+  border: 1px solid #E8E3D8;
+  border-radius: 12px;
+  background: #FFFFFF;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
 }
 
 .team-card--self .team-card__avatar {
-  background: #F5E6D6;
-  color: #C4895A;
+  background: var(--team-accent, #C4895A);
+  color: #FFFFFF;
 }
 
 .team-card__head {
@@ -1532,20 +1552,20 @@
 }
 
 .team-card__avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1A1A1A;
-  font-family: 'Inter Tight', 'IBM Plex Sans Thai', system-ui, sans-serif;
-  font-weight: 600;
+  color: #FFFFFF;
+  font-family: var(--up-font-sans);
+  font-weight: 700;
   font-size: 14px;
   flex-shrink: 0;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-  background: #F5F0E8;
+  letter-spacing: 0;
+  background: var(--team-accent, #8A8578);
 }
 
 .team-card__id {
@@ -1555,7 +1575,7 @@
 }
 
 .team-card__id strong {
-  font-family: 'Inter Tight', 'IBM Plex Sans Thai', system-ui, sans-serif;
+  font-family: var(--up-font-sans);
   font-size: 15px;
   font-weight: 600;
   color: #1A1A1A;
@@ -1584,14 +1604,12 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0;
-  border-radius: 0;
+  padding: 6px 9px;
+  border-radius: 999px;
   font-size: 11px;
-  font-weight: 500;
-  background: transparent;
+  font-weight: 700;
   color: #8A8578;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -1604,26 +1622,26 @@
   flex-shrink: 0;
 }
 
-.team-card__status--office {
-  background: transparent;
-  color: #6B8E5A;
+.team-card__status--ready {
+  background: #E9F6EC;
+  color: #2F7D4D;
 }
 
-.team-card__status--office .team-card__dot {
-  background: #6B8E5A;
+.team-card__status--ready .team-card__dot {
+  background: #2F7D4D;
 }
 
 .team-card__status--wfh {
-  background: transparent;
-  color: #7A6FA0;
+  background: #E6F4FF;
+  color: #1F6FA8;
 }
 
 .team-card__status--wfh .team-card__dot {
-  background: #7A6FA0;
+  background: #1F6FA8;
 }
 
 .team-card__status--offsite {
-  background: transparent;
+  background: #FFF0DF;
   color: #C4895A;
 }
 
@@ -1632,77 +1650,85 @@
 }
 
 .team-card__status--leave {
-  background: transparent;
-  color: #B5739B;
+  background: #FFE8E8;
+  color: #B43A3A;
 }
 
 .team-card__status--leave .team-card__dot {
-  background: #B5739B;
-}
-
-.team-card__status--done {
-  background: transparent;
-  color: #8A8578;
-}
-
-.team-card__status--done .team-card__dot {
-  background: #8A8578;
+  background: #B43A3A;
 }
 
 .team-card__status--idle {
-  background: transparent;
-  color: #8A8578;
+  background: #F0EDE6;
+  color: #7C7568;
 }
 
-.team-card__meta {
+.team-card__status--idle .team-card__dot {
+  background: #7C7568;
+}
+
+.team-card__status--done {
+  background: #ECEFF3;
+  color: #5C6673;
+}
+
+.team-card__status--done .team-card__dot {
+  background: #5C6673;
+}
+
+.team-card__workline {
   display: flex;
-  gap: 24px;
-  margin: 0;
-  padding: 0 0 0 54px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #F8F5EF;
+  color: #1A1A1A;
+  font-family: var(--up-font-sans);
   font-size: 12px;
+  font-weight: 500;
 }
 
-.team-card__meta > div {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+.team-card__workline span {
   min-width: 0;
 }
 
-.team-card__meta dt {
-  font-size: 9px;
-  font-weight: 600;
+.team-card__workline span:first-child {
   color: #8A8578;
-  letter-spacing: 0.12em;
-  margin: 0;
-  text-transform: uppercase;
+  flex-shrink: 0;
 }
 
-.team-card__meta dd {
-  font-family: 'Inter Tight', 'IBM Plex Sans Thai', system-ui, sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  color: #1A1A1A;
-  margin: 0;
-  letter-spacing: -0.01em;
+.team-card__workline span + span::before {
+  content: '·';
+  margin-right: 8px;
+  color: #C4895A;
+}
+
+.team-card__workline span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .team-card__note {
-  margin: 0 0 0 54px;
-  padding: 0;
+  margin: 0;
+  min-height: 38px;
   background: transparent;
-  border-left: 2px solid #E8E3D8;
-  padding-left: 12px;
-  border-radius: 0;
-  color: #8A8578;
-  font-size: 12px;
-  font-style: italic;
-  line-height: 1.5;
+  color: #4A463F;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
 }
 
 .team-card--self .team-card__note {
-  border-left-color: #C4895A;
   color: #1A1A1A;
+}
+
+@media (max-width: 760px) {
+  .team-status-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dashboard-month-stats {
@@ -2112,9 +2138,6 @@
   --up-accent-soft: #F5E6D6;
   --up-accent-dark: #A06D40;
   --up-good: #3f7e5b;
-  --up-font-thai: 'Sarabun','IBM Plex Sans Thai',system-ui,sans-serif;
-  --up-font-sans: 'Inter Tight','IBM Plex Sans Thai',system-ui,sans-serif;
-  --up-font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   background: var(--up-bg);
   color: var(--up-ink);
