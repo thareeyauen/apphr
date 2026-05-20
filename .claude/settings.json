@@ -19,7 +19,24 @@
       "Bash(curl -s http://localhost:5173)",
       "Bash(taskkill /f /im node.exe)",
       "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
-      "PowerShell(Stop-Process -Force)"
+      "PowerShell(Stop-Process -Force)",
+      "Bash(ls c:/ | grep -i apphr)",
+      "Read(//c//**)",
+      "Bash(ls c:/apphr_backend)",
+      "Read(//c/apphr_backend/**)",
+      "Bash(findstr :4000)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId = 25112\")",
+      "Bash(taskkill /PID 25112 /F)",
+      "PowerShell(Start-Process -FilePath \"node\" -ArgumentList \"src/server.js\" -WorkingDirectory \"c:\\\\apphr_backend\" -WindowStyle Hidden -PassThru)",
+      "PowerShell($old = \\(Get-NetTCPConnection -LocalPort 4000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1\\).OwningProcess; if \\($old\\) { Stop-Process -Id $old -Force; Start-Sleep -Seconds 1 }; Start-Process -FilePath \"node\" -ArgumentList \"src/server.js\" -WorkingDirectory \"c:\\\\apphr_backend\" -WindowStyle Hidden; Start-Sleep -Seconds 2; $r = try { Invoke-RestMethod -Uri 'http://localhost:4000/health' -TimeoutSec 5 } catch { $null }; $new = \\(Get-NetTCPConnection -LocalPort 4000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1\\).OwningProcess; \"Old PID: $old, New PID: $new, Health: $\\(if \\($r\\) { 'OK' } else { 'FAIL' }\\)\")",
+      "PowerShell($today = \\(Get-Date -Format 'yyyy-MM-dd'\\); $body = @{ email='h0029@apphr.test'; password='H0029@123' } | ConvertTo-Json; $login = Invoke-RestMethod -Uri 'http://localhost:4000/api/auth/login' -Method Post -Body $body -ContentType 'application/json'; $token = $login.token; $headers = @{ Authorization = \"Bearer $token\" }; $records = Invoke-RestMethod -Uri 'http://localhost:4000/api/checkins?scope=team' -Headers $headers; $todays = $records | Where-Object { $_.dateKey -eq $today }; \"Today=$today; total team records=$\\($records.Count\\); today's records=$\\($todays.Count\\)\"; $todays | ForEach-Object { \"  id=$\\($_.id\\) owner=$\\($_.ownerKey\\) time=$\\($_.time\\) loc=$\\($_.location\\) checkOutTime=$\\($_.checkOutTime\\)\" })",
+      "PowerShell($body = @{ email='h0029@apphr.test'; password='H0029@123' } | ConvertTo-Json; $login = Invoke-RestMethod -Uri 'http://localhost:4000/api/auth/login' -Method Post -Body $body -ContentType 'application/json'; $token = $login.token; $headers = @{ Authorization = \"Bearer $token\" }; \"=== /auth/me ===\"; $me = Invoke-RestMethod -Uri 'http://localhost:4000/api/auth/me' -Headers $headers; \"id=$\\($me.user.id\\) empId=$\\($me.user.employeeId\\) dept=$\\($me.user.profile.job.department\\)\"; \"=== team checkins ===\"; $cs = Invoke-RestMethod -Uri 'http://localhost:4000/api/checkins?scope=team' -Headers $headers; $cs | ForEach-Object { \"id=$\\($_.id\\) ownerKey=$\\($_.ownerKey\\) ownerId=$\\($_.ownerId\\) employeeId=$\\($_.employeeId\\) dateKey=$\\($_.dateKey\\) time=$\\($_.time\\) loc=$\\($_.location\\) co=$\\($_.checkOutTime\\) status=$\\($_.status\\)\" })",
+      "PowerShell($body = @{ email='h0029@apphr.test'; password='H0029@123' } | ConvertTo-Json; $login = Invoke-RestMethod -Uri 'http://localhost:4000/api/auth/login' -Method Post -Body $body -ContentType 'application/json'; $token = $login.token; $headers = @{ Authorization = \"Bearer $token\" }; \"=== requests ===\"; $rs = Invoke-RestMethod -Uri 'http://localhost:4000/api/requests?scope=approver' -Headers $headers; $rs | ForEach-Object { \"id=$\\($_.id\\) ownerKey=$\\($_.ownerKey\\) type=$\\($_.type\\) status=$\\($_.status\\) startDateKey=$\\($_.startDateKey\\) endDateKey=$\\($_.endDateKey\\)\" })",
+      "PowerShell($body = @{ email='h0042@apphr.test'; password='H0042@123' } | ConvertTo-Json; $login = Invoke-RestMethod -Uri 'http://localhost:4000/api/auth/login' -Method Post -Body $body -ContentType 'application/json'; $h = @{ Authorization = \"Bearer $\\($login.token\\)\" }; Invoke-RestMethod -Uri 'http://localhost:4000/api/requests/REQ-802637' -Method Delete -Headers $h | ConvertTo-Json -Compress)",
+      "PowerShell($body = @{ email='h0029@apphr.test'; password='H0029@123' } | ConvertTo-Json; $login = Invoke-RestMethod -Uri 'http://localhost:4000/api/auth/login' -Method Post -Body $body -ContentType 'application/json'; $h = @{ Authorization = \"Bearer $\\($login.token\\)\" }; $cs = Invoke-RestMethod -Uri 'http://localhost:4000/api/checkins?scope=team' -Headers $h; \"Total team records=$\\($cs.Count\\); today=2026-05-20\"; $cs | ForEach-Object { \"id=$\\($_.id\\) owner=$\\($_.ownerKey\\) dateKey='$\\($_.dateKey\\)' time='$\\($_.time\\)' loc='$\\($_.location\\)' co='$\\($_.checkOutTime\\)' status='$\\($_.status\\)' createdAt=$\\($_.createdAt\\)\" })"
+    ],
+    "additionalDirectories": [
+      "c:\\apphr_backend\\src\\routes"
     ]
   }
 }

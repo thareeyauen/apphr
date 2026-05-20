@@ -18,6 +18,7 @@ import {
   PasswordResetModal
 } from './Components/AccountPageComponents';
 import BottomNav from './Components/BottomNav';
+import { apiChangePassword } from '../api';
 import './Account.css';
 
 const TAB_IDS = [
@@ -594,14 +595,20 @@ export default function Account({
 
   const closePasswordPopup = () => setShowPasswordPopup(false);
 
-  const handleResetPassword = () => {
+  const handleResetPassword = async () => {
     if (!pwCurrent) { setPwError('กรุณากรอกรหัสผ่านปัจจุบัน'); return; }
-    if (pwCurrent !== user?.password) { setPwError('รหัสผ่านปัจจุบันไม่ถูกต้อง'); return; }
     if (pwNew.length < 8) { setPwError('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร'); return; }
     if (pwNew !== pwConfirm) { setPwError('ยืนยันรหัสผ่านใหม่ไม่ตรงกัน'); return; }
-    onUpdateUser?.({ password: pwNew });
-    setPwSuccess(true);
-    setTimeout(closePasswordPopup, 1500);
+    try {
+      await apiChangePassword(pwCurrent, pwNew);
+      setPwError('');
+      setPwSuccess(true);
+      setTimeout(closePasswordPopup, 1500);
+    } catch (err) {
+      if (err?.status === 401) setPwError('รหัสผ่านปัจจุบันไม่ถูกต้อง');
+      else if (err?.status === 400) setPwError(err.message || 'ข้อมูลไม่ถูกต้อง');
+      else setPwError('เปลี่ยนรหัสผ่านไม่สำเร็จ');
+    }
   };
 
   return (

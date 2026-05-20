@@ -1,18 +1,21 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   MdArrowBack,
+  MdAttachFile,
   MdCalendarToday,
+  MdInfoOutline,
   MdSend
 } from 'react-icons/md';
 import BottomNav from './Components/BottomNav';
+import {
+  LEAVE_TYPES,
+  LEAVE_TYPES_BY_ID,
+  computeTenureYears,
+  annualQuotaForTenure,
+  daysBetween,
+  parseFlexibleDate,
+} from '../leaveTypes';
 import './Leave.css';
-
-const LEAVE_TYPES = [
-  { id: 'annual', label: 'Annual Leave', detail: 'ลาพักร้อน', remaining: 5 },
-  { id: 'sick', label: 'Sick Leave', detail: 'ลาป่วย', remaining: 30 },
-  { id: 'personal', label: 'Personal Leave', detail: 'ลากิจ', remaining: 6 },
-  { id: 'maternity', label: 'Maternity Leave', detail: 'ลาคลอด', remaining: 98 }
-];
 
 const DAY_TYPES = [
   { id: 'full', label: 'Full Day', multiplier: 1 },
@@ -21,15 +24,14 @@ const DAY_TYPES = [
   { id: 'period', label: 'Period', multiplier: 1 }
 ];
 
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+
 const getDateDiffInclusive = (startDate, endDate) => {
   if (!startDate || !endDate) return 0;
-
   const start = new Date(`${startDate}T00:00:00`);
   const end = new Date(`${endDate}T00:00:00`);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end < start) return 0;
-
-  const oneDay = 24 * 60 * 60 * 1000;
-  return Math.floor((end - start) / oneDay) + 1;
+  return Math.floor((end - start) / 86400000) + 1;
 };
 
 const formatInputDate = (dateValue) => {
@@ -39,6 +41,33 @@ const formatInputDate = (dateValue) => {
     month: 'short',
     year: 'numeric'
   });
+};
+
+const toDateKey = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const shiftDays = (dateKey, deltaDays) => {
+  const d = new Date(`${dateKey}T00:00:00`);
+  d.setDate(d.getDate() + deltaDays);
+  return toDateKey(d);
+};
+
+const readFileAsDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error('read failed'));
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(file);
+  });
+
+const getQuotaForUser = (cfg, currentUser) => {
+  if (cfg.id !== 'annual') return cfg.quota ?? 0;
+  const tenure = computeTenureYears(currentUser?.profile?.job?.startDate || currentUser?.startDate);
+  return annualQuotaForTenure(tenure);
 };
 
 export default function Leave({
@@ -56,6 +85,7 @@ export default function Leave({
   const isExemptFromCheckIn = isCheckInDisabled || currentUser?.profile?.job?.employeeLevel === 'Board Level' || currentUser?.profile?.job?.employeeLevel === 'Director Level';
   const userOwnerKey = currentUser?.employeeId || currentUser?.email || currentUser?.userType || '';
   const today = new Date().toISOString().slice(0, 10);
+
   const [leaveType, setLeaveType] = useState(LEAVE_TYPES[0].id);
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
@@ -63,28 +93,51 @@ export default function Leave({
   const [periodStart, setPeriodStart] = useState('09:00');
   const [periodEnd, setPeriodEnd] = useState('17:00');
   const [reason, setReason] = useState('');
+  const [holidayWorkDate, setHolidayWorkDate] = useState('');
+  const [childBirthDate, setChildBirthDate] = useState('');
+  const [supervisorAcknowledged, setSupervisorAcknowledged] = useState(false);
+  const [medicalCertificate, setMedicalCertificate] = useState(null); // { name, dataUrl, size }
+  const [attachmentError, setAttachmentError] = useState('');
 
-  const selectedLeave = LEAVE_TYPES.find((type) => type.id === leaveType) || LEAVE_TYPES[0];
+  const selectedLeave = LEAVE_TYPES_BY_ID[leaveType] || LEAVE_TYPES[0];
   const selectedDayType = DAY_TYPES.find((type) => type.id === dayType) || DAY_TYPES[0];
 
-  const usedDaysByType = useMemo(() => {
+  // Clear conditional fields when leave type changes.
+  useEffect(() => {
+    setHolidayWorkDate('');
+    setChildBirthDate('');
+    setSupervisorAcknowledged(false);
+    setMedicalCertificate(null);
+    setAttachmentError('');
+  }, [leaveType]);
+
+  // Compute min/max selectable dates per type. Sick allows backdate; others lock to today+.
+  const minStartDate = useMemo(() => {
+    const backdate = selectedLeave.backdateDays || 0;
+    const advance = selectedLeave.advanceDays || 0;
+    if (backdate > 0) return shiftDays(today, -backdate);
+    if (advance > 0) return shiftDays(today, advance);
+    return today;
+  }, [selectedLeave, today]);
+
+  const usedDaysByLabel = useMemo(() => {
     if (!requests.length || !userOwnerKey) return {};
+    const yearPrefix = String(new Date().getFullYear());
     return requests.reduce((acc, req) => {
-      if (req.status !== 'approved') return acc;
+      if (!['approved', 'pending'].includes(req.status)) return acc;
       const reqKey = req?.ownerKey || req?.employeeId || req?.email || req?.userId || '';
       if (reqKey !== userOwnerKey) return acc;
-      const lt = LEAVE_TYPES.find((t) => t.label === req.type);
-      if (!lt) return acc;
+      if (!(req.startDateKey || '').startsWith(yearPrefix)) return acc;
       const days = req.days ?? getDateDiffInclusive(req.startDateKey, req.endDateKey);
-      acc[lt.id] = (acc[lt.id] || 0) + days;
+      acc[req.type] = (acc[req.type] || 0) + days;
       return acc;
     }, {});
   }, [requests, userOwnerKey]);
 
-  const getActualRemaining = (leaveTypeId) => {
-    const lt = LEAVE_TYPES.find((t) => t.id === leaveTypeId);
-    if (!lt) return 0;
-    return Math.max(lt.remaining - (usedDaysByType[leaveTypeId] || 0), 0);
+  const getRemainingForType = (cfg) => {
+    const quota = getQuotaForUser(cfg, currentUser);
+    if (!quota) return 0;
+    return Math.max(quota - (usedDaysByLabel[cfg.label] || 0), 0);
   };
 
   const requestedDays = useMemo(() => {
@@ -94,8 +147,103 @@ export default function Leave({
     return dateCount * selectedDayType.multiplier;
   }, [startDate, endDate, selectedDayType]);
 
-  const remainingAfterRequest = Math.max(getActualRemaining(selectedLeave.id) - requestedDays, 0);
-  const canSubmit = requestedDays > 0 && reason.trim().length > 0;
+  const remainingAfterRequest = Math.max(getRemainingForType(selectedLeave) - requestedDays, 0);
+
+  // Centralized validation — single source of truth for "can submit" + error message.
+  const validationError = useMemo(() => {
+    if (requestedDays <= 0) return 'กรุณาเลือกช่วงวันที่และจำนวนวันให้ถูกต้อง';
+    if (!reason.trim()) return 'กรุณาระบุเหตุผลในการลา';
+
+    const start = parseFlexibleDate(startDate);
+    if (!start) return 'วันที่ไม่ถูกต้อง';
+    const todayDate = new Date();
+    const lead = daysBetween(todayDate, start);
+
+    if (selectedLeave.advanceDays > 0 && lead < selectedLeave.advanceDays) {
+      return `${selectedLeave.labelTh}: ต้องขอล่วงหน้าอย่างน้อย ${selectedLeave.advanceDays} วัน`;
+    }
+    if (lead < 0) {
+      const allowedBack = selectedLeave.backdateDays || 0;
+      if (-lead > allowedBack) {
+        return allowedBack > 0
+          ? `${selectedLeave.labelTh}: ลาย้อนหลังได้ไม่เกิน ${allowedBack} วัน`
+          : `${selectedLeave.labelTh}: ไม่อนุญาตให้ลาย้อนหลัง`;
+      }
+    }
+
+    if (selectedLeave.id === 'annual') {
+      const tenure = computeTenureYears(currentUser?.profile?.job?.startDate || currentUser?.startDate);
+      if (tenure < (selectedLeave.minTenureYears || 1)) {
+        return 'ลาพักร้อน: ใช้สิทธิได้เมื่ออายุงานครบ 1 ปี';
+      }
+    }
+
+    if (selectedLeave.id === 'sick' && selectedLeave.certificateAfterDays && requestedDays >= selectedLeave.certificateAfterDays) {
+      if (!medicalCertificate?.dataUrl) {
+        return `ลาป่วยติดต่อกัน ${selectedLeave.certificateAfterDays} วันขึ้นไป ต้องแนบหนังสือรับรองแพทย์`;
+      }
+    }
+
+    if (selectedLeave.requiresHolidayWorkDate && !holidayWorkDate) {
+      return 'ลาชดเชยทำงานวันหยุด: ต้องระบุวันที่ทำงานในวันหยุด';
+    }
+    if (selectedLeave.requiresSupervisorPreApproval && !supervisorAcknowledged) {
+      return 'ลาชดเชยทำงานวันหยุด: ต้องยืนยันว่าหัวหน้างานอนุมัติแล้ว';
+    }
+
+    if (selectedLeave.requiresChildBirthDate) {
+      const birth = parseFlexibleDate(childBirthDate);
+      if (!birth) return 'ลาคลอด (พนักงานชาย): ต้องระบุวันที่บุตรคลอด';
+      const sinceBirth = daysBetween(birth, start);
+      if (sinceBirth < 0) return 'ลาคลอด (พนักงานชาย): วันเริ่มลาต้องไม่ก่อนวันที่บุตรคลอด';
+      if (sinceBirth > selectedLeave.useWithinDaysFromChildBirth) {
+        return `ลาคลอด (พนักงานชาย): ต้องใช้สิทธิภายใน ${selectedLeave.useWithinDaysFromChildBirth} วันนับจากวันที่บุตรคลอด`;
+      }
+    }
+
+    const quota = getQuotaForUser(selectedLeave, currentUser);
+    if (quota > 0) {
+      const used = usedDaysByLabel[selectedLeave.label] || 0;
+      if (used + requestedDays > quota) {
+        return `${selectedLeave.labelTh}: เกินสิทธิ (คงเหลือ ${Math.max(quota - used, 0)} วัน)`;
+      }
+    }
+    return '';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestedDays, reason, startDate, selectedLeave, currentUser, medicalCertificate, holidayWorkDate, supervisorAcknowledged, childBirthDate, usedDaysByLabel]);
+
+  const canSubmit = !validationError;
+
+  // Auto-clamp start/end when the leave type's allowed window changes.
+  useEffect(() => {
+    if (startDate < minStartDate) setStartDate(minStartDate);
+    if (endDate < minStartDate) setEndDate(minStartDate);
+  }, [minStartDate, startDate, endDate]);
+
+  const handleAttachmentChange = async (event) => {
+    const file = event.target.files?.[0];
+    setAttachmentError('');
+    if (!file) {
+      setMedicalCertificate(null);
+      return;
+    }
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+      setAttachmentError('รองรับเฉพาะไฟล์รูปภาพหรือ PDF');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      setAttachmentError('ไฟล์ต้องมีขนาดไม่เกิน 5 MB');
+      event.target.value = '';
+      return;
+    }
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setMedicalCertificate({ name: file.name, size: file.size, type: file.type, dataUrl });
+    } catch {
+      setAttachmentError('อ่านไฟล์ไม่สำเร็จ');
+    }
+  };
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -104,16 +252,31 @@ export default function Leave({
       selectedDayType.id === 'period'
         ? `${periodStart}-${periodEnd}`
         : selectedDayType.label;
+    const detail = `${formatInputDate(startDate)} - ${formatInputDate(endDate)} (${requestedDays} วัน) · ${selectedDayType.label} · ${reason.trim()}`;
     onSubmitRequest?.({
       type: selectedLeave.label,
-      detail: `${formatInputDate(startDate)} - ${formatInputDate(endDate)} (${requestedDays} วัน) · ${selectedDayType.label} · ${reason.trim()}`,
+      detail,
       startDateKey: startDate,
       endDateKey: endDate,
       days: requestedDays,
-      time: timeLabel
+      time: timeLabel,
+      reason: reason.trim(),
+      ...(selectedLeave.id === 'sick' && medicalCertificate ? { medicalCertificate } : {}),
+      ...(selectedLeave.requiresHolidayWorkDate ? { holidayWorkDate } : {}),
+      ...(selectedLeave.requiresChildBirthDate ? { childBirthDate } : {}),
+      ...(selectedLeave.requiresSupervisorPreApproval ? { supervisorAcknowledged: true } : {}),
     });
     onGoRequest?.();
   };
+
+  const showCertificateField = selectedLeave.id === 'sick'
+    && selectedLeave.certificateAfterDays
+    && requestedDays >= selectedLeave.certificateAfterDays;
+
+  const tenureYears = useMemo(
+    () => computeTenureYears(currentUser?.profile?.job?.startDate || currentUser?.startDate),
+    [currentUser]
+  );
 
   return (
     <div className="leave-page">
@@ -132,21 +295,52 @@ export default function Leave({
         <section className="leave-card">
           <div className="leave-card-head">
             <h2>Leave Type</h2>
-            <span>{getActualRemaining(selectedLeave.id)} days left</span>
+            <span>{getRemainingForType(selectedLeave)} days left</span>
           </div>
           <label className="leave-field leave-type-select">
             <span>ประเภทการลา</span>
             <select value={leaveType} onChange={(event) => setLeaveType(event.target.value)}>
-              {LEAVE_TYPES.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.label} - {type.detail} ({getActualRemaining(type.id)} วันคงเหลือ)
-                </option>
-              ))}
+              {LEAVE_TYPES.map((type) => {
+                const quota = getQuotaForUser(type, currentUser);
+                const remaining = getRemainingForType(type);
+                return (
+                  <option key={type.id} value={type.id}>
+                    {type.labelTh} ({type.label}) · คงเหลือ {remaining}/{quota || '-'} วัน
+                  </option>
+                );
+              })}
             </select>
             <small>
-              {selectedLeave.detail} · คงเหลือ {getActualRemaining(selectedLeave.id)} วัน
+              {selectedLeave.labelTh} · คงเหลือ {getRemainingForType(selectedLeave)} วัน
+              {selectedLeave.id === 'annual' && (
+                <> · อายุงาน {tenureYears.toFixed(1)} ปี</>
+              )}
             </small>
           </label>
+
+          <div className="leave-rule-list">
+            {selectedLeave.advanceDays > 0 && (
+              <p className="leave-rule"><MdInfoOutline /> ต้องขอล่วงหน้าอย่างน้อย {selectedLeave.advanceDays} วัน</p>
+            )}
+            {selectedLeave.backdateDays > 0 && (
+              <p className="leave-rule"><MdInfoOutline /> ลาย้อนหลังได้ไม่เกิน {selectedLeave.backdateDays} วัน</p>
+            )}
+            {selectedLeave.id === 'annual' && (
+              <>
+                <p className="leave-rule"><MdInfoOutline /> ใช้สิทธิได้เมื่ออายุงานครบ 1 ปี · 1–3 ปี: 7 วัน · 3–5 ปี: 10 วัน · 5+ ปี: 15 วัน</p>
+                <p className="leave-rule"><MdInfoOutline /> ยกไปสะสมได้ไม่เกิน {selectedLeave.carryOverMax} วัน · ส่วนเหลือจ่ายคืนเป็นเงินรอบปี</p>
+              </>
+            )}
+            {selectedLeave.id === 'sick' && (
+              <p className="leave-rule"><MdInfoOutline /> ลาติดต่อกัน {selectedLeave.certificateAfterDays} วันขึ้นไป ต้องแนบหนังสือรับรองแพทย์</p>
+            )}
+            {selectedLeave.requiresSupervisorPreApproval && (
+              <p className="leave-rule"><MdInfoOutline /> ต้องได้รับอนุมัติจากหัวหน้างานก่อนใช้สิทธิ และใช้ได้เฉพาะกรณีที่ทำงานในวันหยุดเท่านั้น</p>
+            )}
+            {selectedLeave.requiresChildBirthDate && (
+              <p className="leave-rule"><MdInfoOutline /> ต้องใช้สิทธิภายใน {selectedLeave.useWithinDaysFromChildBirth} วันนับจากวันที่บุตรคลอด</p>
+            )}
+          </div>
         </section>
 
         <section className="leave-card">
@@ -160,6 +354,7 @@ export default function Leave({
               <input
                 type="date"
                 value={startDate}
+                min={minStartDate}
                 onChange={(event) => {
                   setStartDate(event.target.value);
                   if (endDate < event.target.value) setEndDate(event.target.value);
@@ -222,6 +417,69 @@ export default function Leave({
           )}
         </section>
 
+        {selectedLeave.requiresHolidayWorkDate && (
+          <section className="leave-card">
+            <div className="leave-card-head">
+              <h2>วันที่ทำงานในวันหยุด</h2>
+            </div>
+            <label className="leave-field">
+              <span>ระบุวันที่คุณทำงานในวันหยุดที่จะใช้ลาชดเชย</span>
+              <input
+                type="date"
+                value={holidayWorkDate}
+                max={today}
+                onChange={(event) => setHolidayWorkDate(event.target.value)}
+              />
+            </label>
+            <label className="leave-field leave-field--checkbox">
+              <input
+                type="checkbox"
+                checked={supervisorAcknowledged}
+                onChange={(event) => setSupervisorAcknowledged(event.target.checked)}
+              />
+              <span>ยืนยันว่าหัวหน้างานอนุมัติให้ใช้สิทธิลาชดเชยแล้ว</span>
+            </label>
+          </section>
+        )}
+
+        {selectedLeave.requiresChildBirthDate && (
+          <section className="leave-card">
+            <div className="leave-card-head">
+              <h2>วันที่บุตรคลอด</h2>
+            </div>
+            <label className="leave-field">
+              <span>ระบุวันที่บุตรคลอด (ใช้สิทธิภายใน {selectedLeave.useWithinDaysFromChildBirth} วัน)</span>
+              <input
+                type="date"
+                value={childBirthDate}
+                max={today}
+                onChange={(event) => setChildBirthDate(event.target.value)}
+              />
+            </label>
+          </section>
+        )}
+
+        {showCertificateField && (
+          <section className="leave-card">
+            <div className="leave-card-head">
+              <h2>หนังสือรับรองแพทย์</h2>
+              <span>{medicalCertificate ? '1 ไฟล์' : 'ยังไม่ได้แนบ'}</span>
+            </div>
+            <label className="leave-field leave-field--file">
+              <span><MdAttachFile /> แนบรูปถ่ายหรือ PDF (ไม่เกิน 5 MB)</span>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handleAttachmentChange}
+              />
+            </label>
+            {medicalCertificate && (
+              <p className="leave-rule">แนบแล้ว: {medicalCertificate.name} ({Math.round(medicalCertificate.size / 1024)} KB)</p>
+            )}
+            {attachmentError && <p className="leave-warning">{attachmentError}</p>}
+          </section>
+        )}
+
         <section className="leave-card">
           <div className="leave-card-head">
             <h2>Reason</h2>
@@ -248,6 +506,7 @@ export default function Leave({
             <span>Total request</span>
             <strong>{requestedDays || 0} วัน</strong>
           </div>
+          {validationError && <p className="leave-warning">{validationError}</p>}
           <button type="submit" className="leave-submit" disabled={!canSubmit}>
             <MdSend />
             Submit Request

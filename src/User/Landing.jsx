@@ -16,6 +16,7 @@ import Record from './Record';
 import Request from './Request';
 import BottomNav from './Components/BottomNav';
 import { CHECK_IN_USER_TYPES } from './userTypes';
+import { LEAVE_LABELS, LEAVE_TYPES, quotaForUser } from '../leaveTypes';
 
 const CHECK_IN_RECORDS_KEY = 'apphr-checkin-records';
 const CHECK_IN_RECORDS_SYNC_EVENT = 'apphr-checkin-records-sync';
@@ -149,6 +150,7 @@ export default function Landing({
   }, [hasExternalCheckInRecords]);
 
   useEffect(() => {
+    if (hasExternalCheckInRecords) return;
     if (localStorage.getItem(DEMO_SEED_KEY)) return;
     const ownerKey = currentUser?.employeeId || currentUser?.email || currentUser?.userType;
     if (!ownerKey) return;
@@ -182,10 +184,10 @@ export default function Landing({
     });
 
     const demoRecords = [
-      buildRecord(buildPastWeekday(1, 9, 5), 'HAND SE Thonglor', undefined), // forgot checkout — most recent weekday
-      buildRecord(buildPastWeekday(2, 9, 30), 'WFH', '17:30'), // complete record (check-in + check-out)
-      buildRecord(buildPastWeekday(4, 8, 50), 'KRAC Chulalongkorn University', undefined), // another forgot checkout
-      buildRecord(buildPastWeekday(6, 9, 15), 'HAND SE Thonglor', '18:00') // complete record (older)
+      buildRecord(buildPastWeekday(1, 9, 5), 'HAND SE Thonglor', undefined),
+      buildRecord(buildPastWeekday(2, 9, 30), 'WFH', '17:30'),
+      buildRecord(buildPastWeekday(4, 8, 50), 'KRAC Chulalongkorn University', undefined),
+      buildRecord(buildPastWeekday(6, 9, 15), 'HAND SE Thonglor', '18:00')
     ];
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -205,13 +207,12 @@ export default function Landing({
     employeeId: 'H0029',
     company: 'บริษัท แฮนด์ วิสาหกิจเพื่อสังคม จำกัด',
     language: 'English',
-    leaveQuota: '5 days',
-    leaveQuotas: [
-      { type: 'Annual Leave', detail: 'ลาพักร้อน', remaining: '5 days' },
-      { type: 'Sick Leave', detail: 'ลาป่วย', remaining: '30 days' },
-      { type: 'Personal Leave', detail: 'ลากิจ', remaining: '3 days' },
-      { type: 'Maternity Leave', detail: 'ลาคลอด', remaining: '98 days' }
-    ],
+    leaveQuota: `${quotaForUser('annual', currentUser)} days`,
+    leaveQuotas: LEAVE_TYPES.map((t) => ({
+      type: t.label,
+      detail: t.labelTh,
+      remaining: `${quotaForUser(t.id, currentUser)} days`,
+    })),
     ...currentUser
   };
   const userDate = today.toLocaleDateString('en-US', {
@@ -247,7 +248,7 @@ export default function Landing({
   const todayCheckIn = activeCheckIn || todaysUserRecords[0];
 
   const getStatusInfo = (location) => {
-    if (!location) return { label: 'ยังไม่เช็คอิน', tone: 'idle' };
+    if (!location) return { label: 'เช็คอินแล้ว', tone: 'ready' };
     const lower = String(location).toLowerCase();
     if (lower === 'wfh' || lower.includes('บ้าน')) return { label: 'WFH', tone: 'wfh' };
     if (lower.includes('hand') || lower.includes('krac') || lower.includes('hq')) {
@@ -300,12 +301,7 @@ export default function Landing({
   const selfNickname = user?.profile?.user?.nicknameTh || user.nickname || 'เพ้นท์';
   const selfRole = user?.position || user?.profile?.job?.roleTh || 'Junior Analyst';
   const selfInitial = (selfNickname || user.name || '?').trim().charAt(0).toUpperCase();
-  const LEAVE_LABEL = {
-    'Annual Leave': 'ลาพักร้อน',
-    'Sick Leave': 'ลาป่วย',
-    'Personal Leave': 'ลากิจ',
-    'Maternity Leave': 'ลาคลอด'
-  };
+  const LEAVE_LABEL = LEAVE_LABELS;
   const getTodayApprovedLeaveForAccount = (account) => {
     const accountOwnerKey = getUserRecordOwnerKey(account);
     return teamRequests.find((req) => {
@@ -389,9 +385,9 @@ export default function Landing({
           id: account.id,
           ...display,
           accent: fallback.accent || TEAM_ACCENTS[index % TEAM_ACCENTS.length],
-          status: recordStatus || (hasTodayRecord ? fallback.status : { label: 'ยังไม่เช็คอิน', tone: 'idle' }),
-          checkInTime: accountApprovedLeave ? 'วันนี้' : todayRecord?.time || (hasTodayRecord ? fallback.checkInTime : ''),
-          location: accountApprovedLeave ? LEAVE_LABEL[accountApprovedLeave.type] : todayRecord?.location || (hasTodayRecord ? fallback.location : ''),
+          status: recordStatus || { label: 'ยังไม่เช็คอิน', tone: 'idle' },
+          checkInTime: accountApprovedLeave ? 'วันนี้' : (hasTodayRecord ? (todayRecord?.time || '') : ''),
+          location: accountApprovedLeave ? LEAVE_LABEL[accountApprovedLeave.type] : (hasTodayRecord ? (todayRecord?.location || '') : ''),
           statusMessage: accountApprovedLeave ? getLeaveStatusMessage(accountApprovedLeave) : activeRecord?.note || todayRecord?.note || '',
           hideCheckIn: isExemptAccount || Boolean(accountApprovedLeave)
         };

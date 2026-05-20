@@ -1,26 +1,27 @@
 import { useState } from 'react';
 import { MdArrowForward } from 'react-icons/md';
+import { apiLogin } from '../api';
 import './Login.css';
 
-export default function Login({ users = [], onSignIn }) {
+export default function Login({ onSignIn }) {
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    if (busy) return;
     const formData = new FormData(event.currentTarget);
     const email = String(formData.get('email') || '').trim();
     const password = String(formData.get('password') || '');
-    const normalizedEmail = email.toLowerCase();
-    const matchedUser = users.find((user) => user.email?.toLowerCase() === normalizedEmail);
-
-    if (!matchedUser || matchedUser.password !== password) {
+    setBusy(true);
+    try {
+      const user = await apiLogin(email, password);
+      onSignIn(user);
+    } catch {
       setError('Email or password is incorrect');
-      return;
+    } finally {
+      setBusy(false);
     }
-
-    onSignIn({
-      ...matchedUser
-    });
   };
 
   return (
@@ -40,8 +41,8 @@ export default function Login({ users = [], onSignIn }) {
 
         {error && <p className="login-error">{error}</p>}
 
-        <button className="login-submit" type="submit">
-          <span>Sign in</span>
+        <button className="login-submit" type="submit" disabled={busy}>
+          <span>{busy ? 'Signing in…' : 'Sign in'}</span>
           <MdArrowForward />
         </button>
       </form>

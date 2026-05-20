@@ -281,6 +281,58 @@
   transform: translateY(-1px);
 }
 
+.leave-rule-list {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.leave-rule {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--up-ink-3);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.leave-rule svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--up-accent);
+}
+
+.leave-warning {
+  margin: 8px 0 0;
+  color: #b04848;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.leave-field--checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.leave-field--checkbox input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.leave-field--file input[type="file"] {
+  border: 1px dashed var(--up-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--up-bg);
+  cursor: pointer;
+  font-family: var(--up-font-thai);
+}
+
 @media (max-width: 900px) {
   .leave-form {
     grid-template-columns: 1fr;
