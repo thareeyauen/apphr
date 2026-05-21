@@ -94,6 +94,7 @@ const isDirectorAccount = (account) =>
 
 export default function Landing({
   user: currentUser,
+  entitlements,
   requests = [],
   teamRequests = requests,
   checkInRecords: externalCheckInRecords,
@@ -207,11 +208,11 @@ export default function Landing({
     employeeId: 'H0029',
     company: 'บริษัท แฮนด์ วิสาหกิจเพื่อสังคม จำกัด',
     language: 'English',
-    leaveQuota: `${quotaForUser('annual', currentUser)} days`,
+    leaveQuota: `${quotaForUser('annual', currentUser, entitlements)} days`,
     leaveQuotas: LEAVE_TYPES.map((t) => ({
       type: t.label,
       detail: t.labelTh,
-      remaining: `${quotaForUser(t.id, currentUser)} days`,
+      remaining: `${quotaForUser(t.id, currentUser, entitlements)} days`,
     })),
     ...currentUser
   };

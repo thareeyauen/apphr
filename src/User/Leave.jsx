@@ -64,7 +64,10 @@ const readFileAsDataUrl = (file) =>
     reader.readAsDataURL(file);
   });
 
-const getQuotaForUser = (cfg, currentUser) => {
+const getQuotaForUser = (cfg, currentUser, overrides) => {
+  if (overrides && Object.prototype.hasOwnProperty.call(overrides, cfg.id)) {
+    return overrides[cfg.id];
+  }
   if (cfg.id !== 'annual') return cfg.quota ?? 0;
   const tenure = computeTenureYears(currentUser?.profile?.job?.startDate || currentUser?.startDate);
   return annualQuotaForTenure(tenure);
@@ -73,6 +76,7 @@ const getQuotaForUser = (cfg, currentUser) => {
 export default function Leave({
   onSubmitRequest,
   currentUser,
+  entitlements,
   requests = [],
   onGoBack,
   onGoHome,
@@ -135,7 +139,7 @@ export default function Leave({
   }, [requests, userOwnerKey]);
 
   const getRemainingForType = (cfg) => {
-    const quota = getQuotaForUser(cfg, currentUser);
+    const quota = getQuotaForUser(cfg, currentUser, entitlements);
     if (!quota) return 0;
     return Math.max(quota - (usedDaysByLabel[cfg.label] || 0), 0);
   };
@@ -201,7 +205,7 @@ export default function Leave({
       }
     }
 
-    const quota = getQuotaForUser(selectedLeave, currentUser);
+    const quota = getQuotaForUser(selectedLeave, currentUser, entitlements);
     if (quota > 0) {
       const used = usedDaysByLabel[selectedLeave.label] || 0;
       if (used + requestedDays > quota) {
@@ -210,7 +214,7 @@ export default function Leave({
     }
     return '';
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestedDays, reason, startDate, selectedLeave, currentUser, medicalCertificate, holidayWorkDate, supervisorAcknowledged, childBirthDate, usedDaysByLabel]);
+  }, [requestedDays, reason, startDate, selectedLeave, currentUser, entitlements, medicalCertificate, holidayWorkDate, supervisorAcknowledged, childBirthDate, usedDaysByLabel]);
 
   const canSubmit = !validationError;
 
@@ -301,7 +305,7 @@ export default function Leave({
             <span>ประเภทการลา</span>
             <select value={leaveType} onChange={(event) => setLeaveType(event.target.value)}>
               {LEAVE_TYPES.map((type) => {
-                const quota = getQuotaForUser(type, currentUser);
+                const quota = getQuotaForUser(type, currentUser, entitlements);
                 const remaining = getRemainingForType(type);
                 return (
                   <option key={type.id} value={type.id}>

@@ -1,4 +1,4 @@
-import { useState, useRef, useLayoutEffect } from 'react';
+﻿import { useState, useRef, useLayoutEffect } from 'react';
 import {
   MdBusiness,
   MdPerson,
@@ -62,7 +62,7 @@ const DEFAULT_PROFILE = {
     code: 'HAND23',
     roleTh: 'Project Coordinator',
     department: 'ฝ่ายโครงการ',
-    employeeLevel: 'Staff',
+    employeeLevel: 'Project Level',
     type: 'สัญญาจ้างประจำ',
     startDate: '01 เม.ย. 2566',
     tenure: '3 ปี 1 เดือน',
@@ -407,7 +407,7 @@ function JobTab({ j }) {
 function BenefitsTab({ j }) {
   return (
     <div className="up-benefits">
-      {Object.values(j.benefits).map((b) => (
+      {Object.values(j.benefits).filter((b) => b.status !== 'inactive').map((b) => (
         <div key={b.titleEn} className="up-benefit">
           <div className="up-benefit-head">
             <div className="up-benefit-title">
@@ -551,7 +551,7 @@ export default function Account({
     },
     company: {
       ...mergeProfileSection(DEFAULT_PROFILE.company, profile.company),
-      nameTh: user?.company || DEFAULT_PROFILE.company.nameTh
+      nameTh: user?.company || profile.company?.nameTh || DEFAULT_PROFILE.company.nameTh
     },
     documents: hasOwn(profile, 'documents') ? profile.documents : DEFAULT_PROFILE.documents
   };
@@ -692,3 +692,5 @@ export default function Account({
     </div>
   );
 }
+
+

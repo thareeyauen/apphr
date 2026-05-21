@@ -62,6 +62,12 @@ export async function apiChangePassword(currentPassword, newPassword) {
   return await api('PATCH', `/users/${me.id}/password`, { currentPassword, newPassword });
 }
 
+export async function apiGetMyEntitlement() {
+  const me = await apiMe();
+  if (!me) return {};
+  return await api('GET', `/entitlements/${me.id}`);
+}
+
 export async function apiGetRequests(options = {}) {
   const params = new URLSearchParams();
   if (options.scope) params.set('scope', options.scope);

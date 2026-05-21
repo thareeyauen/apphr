@@ -157,7 +157,10 @@ export function annualQuotaForTenure(tenureYears) {
   return tier ? tier.days : 0;
 }
 
-export function quotaForUser(typeId, user) {
+export function quotaForUser(typeId, user, overrides) {
+  if (overrides && Object.prototype.hasOwnProperty.call(overrides, typeId)) {
+    return overrides[typeId];
+  }
   const cfg = LEAVE_TYPES_BY_ID[typeId];
   if (!cfg) return 0;
   if (typeId === 'annual') {

@@ -14,6 +14,7 @@ import {
   apiDeleteCheckin,
   apiDeleteRequest,
   apiGetCheckins,
+  apiGetMyEntitlement,
   apiGetRequests,
   apiMe,
   apiUpdateCheckin,
@@ -77,6 +78,7 @@ function App() {
   const [loadingUser, setLoadingUser] = useState(true)
   const [checkInRecords, setCheckInRecords] = useState([])
   const [requestRecords, setRequestRecords] = useState([])
+  const [entitlements, setEntitlements] = useState({})
 
   // ─── Initial load: restore session via stored token ────────────────────────
   useEffect(() => {
@@ -113,9 +115,11 @@ function App() {
     if (!signedInUser) {
       setCheckInRecords([])
       setRequestRecords([])
+      setEntitlements({})
       return
     }
     refreshRecords()
+    apiGetMyEntitlement().then((e) => setEntitlements(e || {})).catch(() => setEntitlements({}))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedInUser?.id])
 
@@ -333,6 +337,7 @@ function App() {
       <Leave
         onSubmitRequest={createRequestRecord}
         currentUser={currentUser}
+        entitlements={entitlements}
         requests={currentUserRequests}
         onGoBack={() => navigate('/request')}
         onGoHome={() => navigate('/home')}
@@ -410,6 +415,7 @@ function App() {
   return (
     <Landing
       user={currentUser}
+      entitlements={entitlements}
       requests={currentUserRequests}
       teamRequests={teamStatusRequests}
       checkInRecords={checkInRecords}
