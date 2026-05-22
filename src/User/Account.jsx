@@ -37,78 +37,6 @@ const BENEFIT_ICONS = {
   equipment: <MdLaptop />
 };
 
-const DEFAULT_PROFILE = {
-  user: {
-    initial: 'TU',
-    prefix: 'นางสาว',
-    nameTh: 'ธรีญา อึ้งตระกูล',
-    nameEn: 'Thareeya Uentrakul',
-    nicknameTh: 'แทร',
-    gender: 'หญิง',
-    age: 28,
-    dob: '12 ส.ค. 2540',
-    citizenId: '1234567890123',
-    phone: '0812345678',
-    email: 'employee@apphr.test',
-    line: 'thareeya.u',
-    addressCard: '123/45 ถนนพระราม 4 แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110',
-    addressNow: '99/8 อาคาร XYZ ชั้น 4 ซอยทองหล่อ 10 แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110',
-    emergency: { name: 'คุณแม่ — สมใจ อึ้งตระกูล', phone: '0898765432' },
-    education: [
-      { degreeLevel: 'ปริญญาตรี', faculty: 'คณะรัฐศาสตร์', major: 'รัฐศาสตร์', institute: 'จุฬาลงกรณ์มหาวิทยาลัย', studyYears: '2558-2562' }
-    ]
-  },
-  job: {
-    code: 'HAND23',
-    roleTh: 'Project Coordinator',
-    department: 'ฝ่ายโครงการ',
-    employeeLevel: 'Project Level',
-    type: 'สัญญาจ้างประจำ',
-    startDate: '01 เม.ย. 2566',
-    tenure: '3 ปี 1 เดือน',
-    probationStart: '01 เม.ย. 2566',
-    probationEnd: '01 ก.ค. 2566',
-    salary: '35,000 บาท',
-    bank: {
-      name: 'ธนาคารกสิกรไทย',
-      branch: 'สาขาทองหล่อ',
-      acc: '123-4-56789-0',
-      accName: 'ธรีญา อึ้งตระกูล'
-    },
-    history: [
-      { date: '01 เม.ย. 2567', from: 'Project Assistant', to: 'Project Coordinator', kind: 'เลื่อนตำแหน่ง', salary: '+15%' },
-      { date: '01 เม.ย. 2566', from: '—',                  to: 'Project Assistant',   kind: 'เริ่มงาน',     salary: '25,000' }
-    ],
-    positionHistory: [
-      { year: '2567', from: 'Project Assistant', to: 'Project Coordinator', salaryChange: '28,750' },
-      { year: '2566', from: '—', to: 'Project Assistant', salaryChange: '25,000' }
-    ],
-    benefits: {
-      socialSecurity: { titleTh: 'ประกันสังคม',          titleEn: 'Social Security',          icon: 'socialSecurity', status: 'active', detail: 'นายจ้างและลูกจ้างสมทบฝ่ายละ 5% ของค่าจ้าง (สูงสุด 750 บาท/เดือน)' },
-      groupInsurance: { titleTh: 'ประกันกลุ่ม',          titleEn: 'Group Insurance',          icon: 'groupInsurance', status: 'active', detail: 'วงเงิน 100,000 บาท/ปี ครอบคลุม OPD/IPD' },
-      suit:           { titleTh: 'การเบิกชุดสูท',        titleEn: 'Suit Allowance',           icon: 'suit',           status: 'active', detail: 'เบิกได้ 5,000 บาท/ปี' },
-      workWear:       { titleTh: 'การเบิกชุดทำงาน',     titleEn: 'Work Uniform Allowance',   icon: 'workWear',       status: 'active', detail: 'เบิกได้ 3,000 บาท/ปี' },
-      equipment:      { titleTh: 'การเบิกอุปกรณ์ทำงาน', titleEn: 'Work Equipment Allowance', icon: 'equipment',      status: 'active', detail: 'เบิกได้ 10,000 บาท/ปี' }
-    }
-  },
-  company: {
-    nameTh: 'บริษัท แฮนด์ วิสาหกิจเพื่อสังคม จำกัด',
-    nameEn: 'HAND SOCIAL ENTERPRISE COMPANY LIMITED',
-    taxId: '0105559009660',
-    phone: '025506141',
-    address: 'เลขที่ 13 ซอยอรรคพัฒน์ ถนนสุขุมวิท 49-4 แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110',
-    employeeCount: '11 คน'
-  },
-  documents: [
-    { kind: 'สำเนาบัตรประชาชน',         file: 'national-id.pdf',                size: '512 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
-    { kind: 'สำเนาทะเบียนบ้าน',         file: 'house-registration.pdf',         size: '480 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
-    { kind: 'หนังสือรับรองการศึกษา',    file: 'education-certificate.pdf',      size: '768 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
-    { kind: 'สำเนาบัญชีธนาคาร',         file: 'bank-account.pdf',               size: '320 KB', date: '01 เม.ย. 2566', status: 'reviewed' },
-    { kind: 'สัญญาจ้างงาน',              file: 'employment-contract-2023.pdf',   size: '256 KB', date: '01 เม.ย. 2566', status: 'signed' },
-    { kind: 'เอกสารแจ้งปรับเงินเดือน',  file: 'salary-adjustment-2567.pdf',     size: '180 KB', date: '01 เม.ย. 2567', status: 'signed' },
-    { kind: 'เอกสารแจ้งปรับตำแหน่ง',    file: 'position-adjustment-2567.pdf',   size: '192 KB', date: '01 เม.ย. 2567', status: 'signed' }
-  ]
-};
 
 function useNarrow(ref, threshold = 760) {
   const [narrow, setNarrow] = useState(false);
@@ -140,11 +68,19 @@ function KV({ k, v, mono, multiline }) {
   );
 }
 
-function EditableKV({ k, value, onChange, type = 'text', multiline = false }) {
+function EditableKV({ k, value, onChange, type = 'text', multiline = false, options }) {
   return (
     <label className="up-kv up-kv--edit">
       <span className="up-kv-key">{k}</span>
-      {multiline ? (
+      {options ? (
+        <select
+          className="up-edit-field"
+          value={value ?? ''}
+          onChange={(event) => onChange(event.target.value)}
+        >
+          {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+      ) : multiline ? (
         <textarea
           className="up-edit-field up-edit-field--textarea"
           value={value || ''}
@@ -243,8 +179,8 @@ function GeneralTab({ u, editing = false, draft = u, onDraftChange }) {
             <EditableKV k="ชื่อ-นามสกุล (TH)" value={draft.nameTh} onChange={(value) => setField('nameTh', value)} />
             <EditableKV k="ชื่อ-นามสกุล (ENG)" value={draft.nameEn} onChange={(value) => setField('nameEn', value)} />
             <EditableKV k="ชื่อเล่น (TH)" value={draft.nicknameTh} onChange={(value) => setField('nicknameTh', value)} />
-            <EditableKV k="เพศ" value={draft.gender} onChange={(value) => setField('gender', value)} />
-            <EditableKV k="วัน/เดือน/ปีเกิด" value={draft.dob} onChange={(value) => setField('dob', value)} />
+            <EditableKV k="เพศ" value={draft.gender} onChange={(value) => setField('gender', value)} options={['', 'Male', 'Female']} />
+            <EditableKV k="วัน/เดือน/ปีเกิด" value={draft.dob} onChange={(value) => setField('dob', value)} type="date" />
             <EditableKV k="อายุ" type="number" value={draft.age} onChange={(value) => setField('age', value)} />
             <EditableKV k="เลขบัตรประชาชน (ไม่มีขีด)" value={draft.citizenId} onChange={(value) => setField('citizenId', value)} />
           </>
@@ -461,11 +397,6 @@ const getInitials = (name = '') =>
     .slice(0, 2)
     .toUpperCase();
 
-const mergeProfileSection = (defaultSection, userSection = {}) => ({
-  ...defaultSection,
-  ...userSection
-});
-
 const normalizeEducation = (education = []) =>
   education.map((item) => ({
     degreeLevel: item.degreeLevel || item.degree || '',
@@ -476,14 +407,10 @@ const normalizeEducation = (education = []) =>
   }));
 
 const removeDashes = (value = '') => String(value).replaceAll('-', '');
-const hasOwn = (object, key) =>
-  Object.prototype.hasOwnProperty.call(object || {}, key);
-
-const pickProfileValue = (section, key, fallback) =>
-  hasOwn(section, key) ? section[key] : fallback;
 
 export default function Account({
   user,
+  settings,
   onUpdateUser,
   onGoHome,
   onGoRecord,
@@ -511,49 +438,35 @@ export default function Account({
   const isExemptFromCheckIn = isCheckInDisabled || user?.profile?.job?.employeeLevel === 'Board Level' || user?.profile?.job?.employeeLevel === 'Director Level';
 
   const data = {
-    ...DEFAULT_PROFILE,
     user: {
-      ...mergeProfileSection(DEFAULT_PROFILE.user, profile.user),
-      nameEn: user?.name || DEFAULT_PROFILE.user.nameEn,
-      email: user?.email || profile.user?.email || DEFAULT_PROFILE.user.email,
-      initial: profile.user?.initial || (user?.name ? getInitials(user.name) : DEFAULT_PROFILE.user.initial),
-      citizenId: removeDashes(pickProfileValue(profile.user, 'citizenId', DEFAULT_PROFILE.user.citizenId)),
-      phone: removeDashes(pickProfileValue(profile.user, 'phone', DEFAULT_PROFILE.user.phone)),
+      ...profile.user,
+      nameEn: user?.name || profile.user?.nameEn || '',
+      email: user?.email || profile.user?.email || '',
+      initial: profile.user?.initial || (user?.name ? getInitials(user.name) : ''),
+      citizenId: removeDashes(profile.user?.citizenId || ''),
+      phone: removeDashes(profile.user?.phone || ''),
       emergency: {
-        ...DEFAULT_PROFILE.user.emergency,
-        ...profile.user?.emergency,
-        phone: removeDashes(pickProfileValue(profile.user?.emergency, 'phone', DEFAULT_PROFILE.user.emergency.phone))
+        name:  profile.user?.emergency?.name  || '',
+        phone: removeDashes(profile.user?.emergency?.phone || ''),
       },
-      education: hasOwn(profile.user, 'education')
-        ? normalizeEducation(profile.user.education)
-        : normalizeEducation(DEFAULT_PROFILE.user.education)
+      education: normalizeEducation(profile.user?.education || []),
     },
     job: {
-      ...mergeProfileSection(DEFAULT_PROFILE.job, profile.job),
-      bank: {
-        ...DEFAULT_PROFILE.job.bank,
-        ...profile.job?.bank
-      },
-      benefits: {
-        ...DEFAULT_PROFILE.job.benefits,
-        ...profile.job?.benefits
-      },
-      code: user?.employeeId || DEFAULT_PROFILE.job.code,
-      roleTh: user?.position || DEFAULT_PROFILE.job.roleTh,
-      employeeLevel: pickProfileValue(profile.job, 'employeeLevel', DEFAULT_PROFILE.job.employeeLevel),
-      probationStart: hasOwn(profile.job, 'probationStart')
-        ? profile.job.probationStart
-        : pickProfileValue(profile.job, 'startDate', DEFAULT_PROFILE.job.probationStart),
-      salary: pickProfileValue(profile.job, 'salary', DEFAULT_PROFILE.job.salary),
-      positionHistory: hasOwn(profile.job, 'positionHistory')
-        ? profile.job.positionHistory
-        : DEFAULT_PROFILE.job.positionHistory
+      ...profile.job,
+      bank:           { ...profile.job?.bank },
+      benefits:       { ...(settings?.benefits || profile.job?.benefits) },
+      code:           user?.employeeId || profile.job?.code || '',
+      roleTh:         user?.position   || profile.job?.roleTh || '',
+      employeeLevel:  profile.job?.employeeLevel || '',
+      probationStart: profile.job?.probationStart || profile.job?.startDate || '',
+      salary:         profile.job?.salary || '',
+      positionHistory: profile.job?.positionHistory || [],
     },
     company: {
-      ...mergeProfileSection(DEFAULT_PROFILE.company, profile.company),
-      nameTh: user?.company || profile.company?.nameTh || DEFAULT_PROFILE.company.nameTh
+      ...(settings?.company || profile.company),
+      nameTh: settings?.company?.nameTh || user?.company || profile.company?.nameTh || '',
     },
-    documents: hasOwn(profile, 'documents') ? profile.documents : DEFAULT_PROFILE.documents
+    documents: profile.documents || [],
   };
 
   const { user: u, job: j, company: c, documents } = data;

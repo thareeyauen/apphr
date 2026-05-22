@@ -62,6 +62,14 @@ export async function apiChangePassword(currentPassword, newPassword) {
   return await api('PATCH', `/users/${me.id}/password`, { currentPassword, newPassword });
 }
 
+export async function apiGetAllUsers() {
+  return await api('GET', '/users');
+}
+
+export async function apiGetSettings() {
+  return await api('GET', '/settings');
+}
+
 export async function apiGetMyEntitlement() {
   const me = await apiMe();
   if (!me) return {};

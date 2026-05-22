@@ -13,9 +13,11 @@ import {
   apiCreateRequest,
   apiDeleteCheckin,
   apiDeleteRequest,
+  apiGetAllUsers,
   apiGetCheckins,
   apiGetMyEntitlement,
   apiGetRequests,
+  apiGetSettings,
   apiMe,
   apiUpdateCheckin,
   apiUpdateCurrentUser,
@@ -79,6 +81,8 @@ function App() {
   const [checkInRecords, setCheckInRecords] = useState([])
   const [requestRecords, setRequestRecords] = useState([])
   const [entitlements, setEntitlements] = useState({})
+  const [allEmployees, setAllEmployees] = useState([])
+  const [settings, setSettings] = useState(null)
 
   // ─── Initial load: restore session via stored token ────────────────────────
   useEffect(() => {
@@ -116,12 +120,29 @@ function App() {
       setCheckInRecords([])
       setRequestRecords([])
       setEntitlements({})
+      setAllEmployees([])
+      setSettings(null)
       return
     }
     refreshRecords()
     apiGetMyEntitlement().then((e) => setEntitlements(e || {})).catch(() => setEntitlements({}))
+    apiGetAllUsers().then((list) => setAllEmployees(list || [])).catch(() => setAllEmployees([]))
+    apiGetSettings().then((s) => setSettings(s || null)).catch(() => setSettings(null))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedInUser?.id])
+
+  // ─── Refresh team check-ins on landing page (immediate + every 60s) ──────────
+  useEffect(() => {
+    if (!signedInUser) return
+    if (path !== '/' && path !== '/home') return
+    const fetchTeamCheckins = () =>
+      apiGetCheckins({ scope: 'team' })
+        .then((list) => setCheckInRecords(list || []))
+        .catch(() => {})
+    fetchTeamCheckins()
+    const id = setInterval(fetchTeamCheckins, 60_000)
+    return () => clearInterval(id)
+  }, [signedInUser?.id, path])
 
   // ─── Routing ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -398,6 +419,7 @@ function App() {
     return (
       <Account
         user={currentUser}
+        settings={settings}
         onUpdateUser={updateCurrentUser}
         onGoHome={() => navigate('/home')}
         onGoRecord={() => navigate('/record')}
@@ -421,6 +443,7 @@ function App() {
       checkInRecords={checkInRecords}
       onCheckInRecordsChange={replaceCheckInRecords}
       onCreateCheckIn={createCheckInRecord}
+      allEmployees={allEmployees}
       onGoRecord={() => navigate('/record')}
       onGoRequest={() => navigate('/request')}
       onGoAccount={() => navigate('/account')}

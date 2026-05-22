@@ -15,15 +15,11 @@ import Account from './Account';
 import Record from './Record';
 import Request from './Request';
 import BottomNav from './Components/BottomNav';
-import { CHECK_IN_USER_TYPES } from './userTypes';
 import { LEAVE_LABELS, LEAVE_TYPES, quotaForUser } from '../leaveTypes';
 
 const CHECK_IN_RECORDS_KEY = 'apphr-checkin-records';
 const CHECK_IN_RECORDS_SYNC_EVENT = 'apphr-checkin-records-sync';
-const DEMO_SEED_KEY = 'apphr-demo-seeded';
 const LEAVE_CHECKIN_WARNING_KEY = 'apphr-show-leave-checkin-warning';
-const today = new Date();
-
 const getDateKey = (date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -99,6 +95,7 @@ export default function Landing({
   teamRequests = requests,
   checkInRecords: externalCheckInRecords,
   onCheckInRecordsChange,
+  allEmployees = [],
   onGoRecord,
   onGoRequest,
   onGoAccount
@@ -150,71 +147,16 @@ export default function Landing({
     };
   }, [hasExternalCheckInRecords]);
 
-  useEffect(() => {
-    if (hasExternalCheckInRecords) return;
-    if (localStorage.getItem(DEMO_SEED_KEY)) return;
-    const ownerKey = currentUser?.employeeId || currentUser?.email || currentUser?.userType;
-    if (!ownerKey) return;
+  const today = new Date();
 
-    const buildPastWeekday = (weekdaysAgo, hour, minute) => {
-      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      let count = 0;
-      while (count < weekdaysAgo) {
-        d.setDate(d.getDate() - 1);
-        if (d.getDay() !== 0 && d.getDay() !== 6) count += 1;
-      }
-      d.setHours(hour, minute, 0, 0);
-      return d;
-    };
-
-    const buildRecord = (date, location, checkOutTime) => ({
-      id: date.toISOString(),
-      dateKey: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
-      date: date.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }),
-      time: date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-      checkOutTime,
-      status: checkOutTime ? 'Checked out' : 'Checked in',
-      ownerKey,
-      employeeId: currentUser?.employeeId,
-      userId: currentUser?.userType,
-      email: currentUser?.email,
-      userName: currentUser?.name,
-      userType: currentUser?.userType,
-      userTypeLabel: currentUser?.userTypeLabel,
-      location
-    });
-
-    const demoRecords = [
-      buildRecord(buildPastWeekday(1, 9, 5), 'HAND SE Thonglor', undefined),
-      buildRecord(buildPastWeekday(2, 9, 30), 'WFH', '17:30'),
-      buildRecord(buildPastWeekday(4, 8, 50), 'KRAC Chulalongkorn University', undefined),
-      buildRecord(buildPastWeekday(6, 9, 15), 'HAND SE Thonglor', '18:00')
-    ];
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    updateCheckInRecords((current) => {
-      const existingKeys = new Set(current.map((r) => r.id));
-      const merged = [...demoRecords.filter((r) => !existingKeys.has(r.id)), ...current];
-      return merged;
-    });
-    localStorage.setItem(DEMO_SEED_KEY, '1');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Mock user data
   const user = {
-    name: 'ธรีญา อึ้งตระกูล',
-    position: 'Project coordinator',
-    employeeId: 'H0029',
-    company: 'บริษัท แฮนด์ วิสาหกิจเพื่อสังคม จำกัด',
-    language: 'English',
+    ...currentUser,
     leaveQuota: `${quotaForUser('annual', currentUser, entitlements)} days`,
     leaveQuotas: LEAVE_TYPES.map((t) => ({
       type: t.label,
       detail: t.labelTh,
       remaining: `${quotaForUser(t.id, currentUser, entitlements)} days`,
     })),
-    ...currentUser
   };
   const userDate = today.toLocaleDateString('en-US', {
     weekday: 'short',
@@ -223,8 +165,9 @@ export default function Landing({
     year: 'numeric'
   });
 
-  const userInitials = user.name
+  const userInitials = (user.name || '')
     .split(' ')
+    .filter(Boolean)
     .map((namePart) => namePart[0])
     .join('');
   const userOwnerKey = getUserRecordOwnerKey(user);
@@ -332,11 +275,11 @@ export default function Landing({
     : todayCheckIn?.location || '';
   const selfStatusMessage = todayApprovedLeave
     ? getLeaveStatusMessage(todayApprovedLeave)
-    : activeCheckIn?.note || todayCheckIn?.note || '';
+    : activeCheckIn?.notes || activeCheckIn?.note || todayCheckIn?.notes || todayCheckIn?.note || '';
 
   const currentOwnerKey = getUserRecordOwnerKey(user);
   const currentUserDepartment = user?.profile?.job?.department || '';
-  const isBoardViewer = currentUserDepartment === 'Board of Directors';
+  const isBoardViewer = user?.profile?.job?.employeeLevel === 'Board Level';
   const isSelfDirector = isDirectorAccount(user);
   const selfTeamMember = isExemptFromCheckIn && !(isSelfDirector && todayApprovedLeave)
     ? []
@@ -355,11 +298,11 @@ export default function Landing({
       }];
   const teamMembers = [
     ...selfTeamMember,
-    ...CHECK_IN_USER_TYPES
+    ...allEmployees
       .filter((account) => {
         const accountApprovedLeave = getTodayApprovedLeaveForAccount(account);
         if (getUserRecordOwnerKey(account) === currentOwnerKey) return false;
-        if (!isBoardViewer && account?.profile?.job?.department !== currentUserDepartment) return false;
+        if (!isBoardViewer && currentUserDepartment && account?.profile?.job?.department !== currentUserDepartment) return false;
         if (!isCheckInExemptAccount(account)) return true;
         return isDirectorAccount(account) && Boolean(accountApprovedLeave);
       })
@@ -388,8 +331,9 @@ export default function Landing({
           accent: fallback.accent || TEAM_ACCENTS[index % TEAM_ACCENTS.length],
           status: recordStatus || { label: 'ยังไม่เช็คอิน', tone: 'idle' },
           checkInTime: accountApprovedLeave ? 'วันนี้' : (hasTodayRecord ? (todayRecord?.time || '') : ''),
+          checkOutTime: hasTodayRecord ? (todayRecord?.checkOutTime || '') : '',
           location: accountApprovedLeave ? LEAVE_LABEL[accountApprovedLeave.type] : (hasTodayRecord ? (todayRecord?.location || '') : ''),
-          statusMessage: accountApprovedLeave ? getLeaveStatusMessage(accountApprovedLeave) : activeRecord?.note || todayRecord?.note || '',
+          statusMessage: accountApprovedLeave ? getLeaveStatusMessage(accountApprovedLeave) : activeRecord?.notes || activeRecord?.note || todayRecord?.notes || todayRecord?.note || '',
           hideCheckIn: isExemptAccount || Boolean(accountApprovedLeave)
         };
       })
@@ -676,7 +620,11 @@ export default function Landing({
                 </header>
                 {!member.hideCheckIn && (
                   <div className="team-card__workline">
-                    <span>{member.checkInTime || 'วันนี้'}</span>
+                    <span>
+                      {member.checkInTime
+                        ? `เข้า ${member.checkInTime}${member.checkOutTime ? ` / ออก ${member.checkOutTime}` : ''}`
+                        : 'วันนี้'}
+                    </span>
                     <span>{member.location || 'ไม่อยู่ในระบบ check-in'}</span>
                   </div>
                 )}
