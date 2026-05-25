@@ -15,8 +15,6 @@ const OUTSIDE_TYPES = [
   { id: 'other', label: 'Other', detail: 'Specify work outside details' }
 ];
 
-const APPROVER = 'คุณวิชัย ส.';
-
 const getTodayKey = () => new Date().toISOString().slice(0, 10);
 
 const getDateDiffInclusive = (startDate, endDate) => {
@@ -99,7 +97,6 @@ export default function Outside({
     onSubmitRequest?.({
       type: 'Work Outside',
       detail: `${selectedType.label}${locationDetail} · ${formatInputDate(startDate)} - ${formatInputDate(endDate)} · ${startTime}-${endTime} (${totalHours} ชั่วโมง) · ${reason.trim()}`,
-      approver: APPROVER,
       exceptionTypeCode: selectedType.id,
       startDateKey: startDate,
       endDateKey: endDate,
@@ -246,7 +243,7 @@ export default function Outside({
         <aside className="outside-summary">
           <div>
             <span>Approver</span>
-            <strong><MdSupervisorAccount /> {APPROVER}</strong>
+            <strong><MdSupervisorAccount /> ผู้บังคับบัญชา</strong>
           </div>
           <div>
             <span>Type</span>

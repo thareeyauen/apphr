@@ -63,7 +63,7 @@ export default function Requestdoc({
     onSubmitRequest?.({
       type: 'Request Documents',
       detail: `${selectedDocument.name_th}${purposeParts.length ? ` · ${purposeParts.join(' · ')}` : ''}`,
-      approver: 'Assigned by admin',
+      approver: 'Admin',
       documentTypeCode: selectedDocument.code,
       language: needsLanguage ? language : null,
       note: note.trim() || null,
@@ -143,7 +143,7 @@ export default function Requestdoc({
           )}
           <div>
             <span>Send to</span>
-            <strong><MdSupervisorAccount /> Assigned by admin</strong>
+            <strong><MdSupervisorAccount /> Admin</strong>
           </div>
           <div>
             <span>Note</span>

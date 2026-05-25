@@ -1,7 +1,6 @@
 import {
   MdAccessTime,
   MdCalendarToday,
-  MdDelete,
   MdLocationOn
 } from 'react-icons/md';
 import BottomNav from './Components/BottomNav';
@@ -55,14 +54,6 @@ export default function Record({
                   </span>
                 </div>
               </div>
-              <button
-                className="record-delete"
-                onClick={() => onDeleteRecord(record.id)}
-                aria-label={`Delete check in record at ${record.location}`}
-                title="Delete"
-              >
-                <MdDelete />
-              </button>
             </article>
           ))
         )}

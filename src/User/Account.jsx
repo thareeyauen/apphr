@@ -175,7 +175,7 @@ function GeneralTab({ u, editing = false, draft = u, onDraftChange }) {
       <Group title="ข้อมูลส่วนตัว" columns={3}>
         {editing ? (
           <>
-            <EditableKV k="คำนำหน้า" value={draft.prefix} onChange={(value) => setField('prefix', value)} />
+            <EditableKV k="คำนำหน้า" value={draft.prefix} onChange={(value) => setField('prefix', value)} options={['', 'นาย', 'นาง', 'นางสาว', 'ดร.']} />
             <EditableKV k="ชื่อ-นามสกุล (TH)" value={draft.nameTh} onChange={(value) => setField('nameTh', value)} />
             <EditableKV k="ชื่อ-นามสกุล (ENG)" value={draft.nameEn} onChange={(value) => setField('nameEn', value)} />
             <EditableKV k="ชื่อเล่น (TH)" value={draft.nicknameTh} onChange={(value) => setField('nicknameTh', value)} />
