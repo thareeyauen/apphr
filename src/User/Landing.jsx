@@ -56,28 +56,6 @@ const writeStoredCheckInRecords = (records) => {
   );
 };
 
-const TEAM_MOCK_STATUS = {
-  employee: {
-    status: { label: 'พร้อมทำงาน', tone: 'ready' },
-    checkInTime: '09:05',
-    location: 'HQ · สาทร',
-    statusMessage: '',
-    accent: '#C4895A'
-  },
-  director: {
-    status: null,
-    checkInTime: '',
-    location: '',
-    statusMessage: ''
-  },
-  board: {
-    status: null,
-    checkInTime: '',
-    location: '',
-    statusMessage: ''
-  }
-};
-
 const TEAM_ACCENTS = ['#C4895A', '#6F9DB5', '#6B8E5A', '#B685C7', '#8E7CC3', '#B57373'];
 
 const CHECK_IN_EXEMPT_LEVELS = ['Board Level', 'Director Level'];
@@ -288,7 +266,7 @@ export default function Landing({
         nickname: selfNickname,
         role: selfRole,
         initial: selfInitial,
-        accent: TEAM_MOCK_STATUS[user?.userType]?.accent || '#C4895A',
+        accent: '#C4895A',
         status: selfStatus,
         checkInTime: selfCheckInTime,
         location: selfLocation,
@@ -308,7 +286,6 @@ export default function Landing({
       })
       .map((account, index) => {
         const display = getAccountDisplay(account);
-        const fallback = TEAM_MOCK_STATUS[account.id] || TEAM_MOCK_STATUS.employee;
         const isExemptAccount = isCheckInExemptAccount(account);
         const accountApprovedLeave = getTodayApprovedLeaveForAccount(account);
         const { activeRecord, todayRecord } = isExemptAccount
@@ -328,7 +305,7 @@ export default function Landing({
         return {
           id: account.id,
           ...display,
-          accent: fallback.accent || TEAM_ACCENTS[index % TEAM_ACCENTS.length],
+          accent: TEAM_ACCENTS[index % TEAM_ACCENTS.length],
           status: recordStatus || { label: 'ยังไม่เช็คอิน', tone: 'idle' },
           checkInTime: accountApprovedLeave ? 'วันนี้' : (hasTodayRecord ? (todayRecord?.time || '') : ''),
           checkOutTime: hasTodayRecord ? (todayRecord?.checkOutTime || '') : '',

@@ -100,10 +100,15 @@ export default function Outside({
       type: 'Work Outside',
       detail: `${selectedType.label}${locationDetail} · ${formatInputDate(startDate)} - ${formatInputDate(endDate)} · ${startTime}-${endTime} (${totalHours} ชั่วโมง) · ${reason.trim()}`,
       approver: APPROVER,
+      exceptionTypeCode: selectedType.id,
       startDateKey: startDate,
       endDateKey: endDate,
+      startTime,
+      endTime,
+      totalHours,
       subType: selectedType.label,
-      location: locationLabel
+      location: locationLabel,
+      reason: reason.trim(),
     });
     onGoRequest?.();
   };

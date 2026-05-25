@@ -83,6 +83,13 @@ export async function apiGetRequests(options = {}) {
   const qs = params.toString();
   return await api('GET', `/requests${qs ? `?${qs}` : ''}`);
 }
+export async function apiGetDocumentRequestTypes() {
+  return await api('GET', '/lookups/document-request-types');
+}
+export async function apiGetAttendanceExceptionTypes() {
+  return await api('GET', '/lookups/attendance-exception-types');
+}
+
 export async function apiCreateRequest(body) {
   return await api('POST', '/requests', body);
 }

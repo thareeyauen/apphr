@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   MdArrowBack,
   MdDescription,
@@ -6,20 +6,15 @@ import {
   MdSupervisorAccount
 } from 'react-icons/md';
 import BottomNav from './Components/BottomNav';
+import { apiGetDocumentRequestTypes } from '../api';
 import './Requestdoc.css';
-
-const DOCUMENT_TYPES = [
-  { id: 'employment-certificate', label: 'หนังสือรับรองการทำงาน' },
-  { id: 'pay-slip', label: 'สลิปเงินเดือน' },
-  { id: 'withholding-tax', label: 'ใบ 50 ทวิ' },
-  { id: 'employment-contract', label: 'สัญญาจ้างงาน' },
-  { id: 'position-adjustment', label: 'เอกสารปรับตำแหน่ง' }
-];
 
 const LANGUAGE_OPTIONS = [
   { id: 'thai', label: 'ภาษาไทย' },
   { id: 'english', label: 'ภาษาอังกฤษ' }
 ];
+
+const NEEDS_LANGUAGE_CODES = new Set(['EMPLOYMENT_CERT', 'WORK_CERT']);
 
 export default function Requestdoc({
   onSubmitRequest,
@@ -33,25 +28,46 @@ export default function Requestdoc({
   isCheckInDisabled = false
 }) {
   const isExemptFromCheckIn = isCheckInDisabled || currentUser?.profile?.job?.employeeLevel === 'Board Level' || currentUser?.profile?.job?.employeeLevel === 'Director Level';
-  const [documentType, setDocumentType] = useState(DOCUMENT_TYPES[0].id);
+  const [documentTypes, setDocumentTypes] = useState([]);
+  const [documentTypeCode, setDocumentTypeCode] = useState('');
   const [language, setLanguage] = useState(LANGUAGE_OPTIONS[0].id);
   const [note, setNote] = useState('');
 
+  useEffect(() => {
+    let cancelled = false;
+    apiGetDocumentRequestTypes()
+      .then((types) => {
+        if (cancelled) return;
+        setDocumentTypes(types || []);
+        if (types?.length && !documentTypeCode) setDocumentTypeCode(types[0].code);
+      })
+      .catch(() => { if (!cancelled) setDocumentTypes([]); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const selectedDocument = useMemo(
-    () => DOCUMENT_TYPES.find((document) => document.id === documentType) || DOCUMENT_TYPES[0],
-    [documentType]
+    () => documentTypes.find((d) => d.code === documentTypeCode) || documentTypes[0] || null,
+    [documentTypes, documentTypeCode]
   );
   const selectedLanguage = LANGUAGE_OPTIONS.find((option) => option.id === language) || LANGUAGE_OPTIONS[0];
-  const needsLanguage = documentType === 'employment-certificate';
-  const canSubmit = documentType && (!needsLanguage || language);
+  const needsLanguage = selectedDocument ? NEEDS_LANGUAGE_CODES.has(selectedDocument.code) : false;
+  const canSubmit = Boolean(selectedDocument) && (!needsLanguage || language);
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || !selectedDocument) return;
+    const purposeParts = [];
+    if (needsLanguage) purposeParts.push(selectedLanguage.label);
+    if (note.trim()) purposeParts.push(note.trim());
     onSubmitRequest?.({
       type: 'Request Documents',
-      detail: `${selectedDocument.label}${needsLanguage ? ` · ${selectedLanguage.label}` : ''}${note.trim() ? ` · ${note.trim()}` : ''}`,
-      approver: 'Assigned by admin'
+      detail: `${selectedDocument.name_th}${purposeParts.length ? ` · ${purposeParts.join(' · ')}` : ''}`,
+      approver: 'Assigned by admin',
+      documentTypeCode: selectedDocument.code,
+      language: needsLanguage ? language : null,
+      note: note.trim() || null,
+      purpose: purposeParts.join(' · ') || null,
     });
     onGoRequest?.();
   };
@@ -73,14 +89,14 @@ export default function Requestdoc({
         <section className="requestdoc-card">
           <div className="requestdoc-card-head">
             <h2>Document</h2>
-            <span><MdDescription /> {selectedDocument.label}</span>
+            <span><MdDescription /> {selectedDocument?.name_th || '-'}</span>
           </div>
           <div className="requestdoc-field-grid">
             <label className="requestdoc-field">
               <span>ประเภทเอกสาร</span>
-              <select value={documentType} onChange={(event) => setDocumentType(event.target.value)}>
-                {DOCUMENT_TYPES.map((document) => (
-                  <option key={document.id} value={document.id}>{document.label}</option>
+              <select value={documentTypeCode} onChange={(event) => setDocumentTypeCode(event.target.value)}>
+                {documentTypes.map((d) => (
+                  <option key={d.code} value={d.code}>{d.name_th}</option>
                 ))}
               </select>
             </label>
@@ -117,7 +133,7 @@ export default function Requestdoc({
         <aside className="requestdoc-summary">
           <div>
             <span>Document</span>
-            <strong>{selectedDocument.label}</strong>
+            <strong>{selectedDocument?.name_th || '-'}</strong>
           </div>
           {needsLanguage && (
             <div>
