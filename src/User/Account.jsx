@@ -440,7 +440,7 @@ export default function Account({
   const data = {
     user: {
       ...profile.user,
-      nameEn: user?.name || profile.user?.nameEn || '',
+      nameEn: profile.user?.nameEn || '',
       email: user?.email || profile.user?.email || '',
       initial: profile.user?.initial || (user?.name ? getInitials(user.name) : ''),
       citizenId: removeDashes(profile.user?.citizenId || ''),
@@ -482,10 +482,9 @@ export default function Account({
 
   const saveEditGeneral = () => {
     if (!generalDraft) return;
-    const nextInitial = generalDraft.initial || getInitials(generalDraft.nameEn || user?.name || '');
+    const nextInitial = generalDraft.initial || getInitials(generalDraft.nameTh || user?.name || '');
 
     onUpdateUser?.({
-      name: generalDraft.nameEn || user?.name,
       email: generalDraft.email || user?.email,
       profile: {
         ...profile,

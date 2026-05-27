@@ -27,7 +27,7 @@ export default function Login({ onSignIn }) {
   return (
     <main className="login-page">
       <form className="login-form" onSubmit={handleSubmit}>
-        <p className="login-welcome">Welcome...</p>
+        <p className="login-welcome">Welcome</p>
 
         <label className="login-field">
           <span>E-mail</span>

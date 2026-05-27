@@ -1,6 +1,6 @@
 // API client for apphr-backend.
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000';
 const TOKEN_KEY = 'apphr-token';
 
 export function getToken() {
@@ -21,6 +21,15 @@ async function api(method, path, body) {
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
+  // Auto-logout when a previously valid token is rejected by the server
+  // (expired / revoked). Skip when we never sent a token — that's just a
+  // failed login attempt, not a session-expired event.
+  if (res.status === 401 && token) {
+    setToken(null);
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+      window.location.replace('/login');
+    }
+  }
   if (!res.ok) {
     let msg = 'request failed';
     try { msg = (await res.json()).error || msg; } catch { /* noop */ }
