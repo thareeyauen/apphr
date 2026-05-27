@@ -9,7 +9,8 @@ import {
   MdHealthAndSafety,
   MdCheckroom,
   MdEngineering,
-  MdLaptop
+  MdLaptop,
+  MdErrorOutline
 } from 'react-icons/md';
 import {
   AccountContent,
@@ -19,6 +20,7 @@ import {
 } from './Components/AccountPageComponents';
 import BottomNav from './Components/BottomNav';
 import { apiChangePassword } from '../api';
+import { getFieldError } from '../utils/validation';
 import './Account.css';
 
 const TAB_IDS = [
@@ -68,32 +70,39 @@ function KV({ k, v, mono, multiline }) {
   );
 }
 
-function EditableKV({ k, value, onChange, type = 'text', multiline = false, options }) {
+function EditableKV({ k, value, onChange, type = 'text', multiline = false, options, error, onBlur }) {
+  const fieldCls = 'up-edit-field' + (error ? ' up-edit-field--error' : '');
   return (
     <label className="up-kv up-kv--edit">
       <span className="up-kv-key">{k}</span>
       {options ? (
         <select
-          className="up-edit-field"
+          className={fieldCls}
           value={value ?? ''}
           onChange={(event) => onChange(event.target.value)}
+          onBlur={onBlur}
         >
           {options.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
       ) : multiline ? (
         <textarea
-          className="up-edit-field up-edit-field--textarea"
+          className={fieldCls + ' up-edit-field--textarea'}
           value={value || ''}
           rows={3}
           onChange={(event) => onChange(event.target.value)}
+          onBlur={onBlur}
         />
       ) : (
         <input
-          className="up-edit-field"
+          className={fieldCls}
           type={type}
           value={value ?? ''}
           onChange={(event) => onChange(type === 'number' ? Number(event.target.value) : event.target.value)}
+          onBlur={onBlur}
         />
+      )}
+      {error && (
+        <span className="up-field-error"><MdErrorOutline /> {error}</span>
       )}
     </label>
   );
@@ -127,7 +136,7 @@ function CompanyTab({ c }) {
   );
 }
 
-function GeneralTab({ u, editing = false, draft = u, onDraftChange }) {
+function GeneralTab({ u, editing = false, draft = u, onDraftChange, errors = {}, touched = {}, onTouch = () => {} }) {
   const setField = (field, value) => {
     onDraftChange?.({
       ...draft,
@@ -177,7 +186,13 @@ function GeneralTab({ u, editing = false, draft = u, onDraftChange }) {
           <>
             <EditableKV k="คำนำหน้า" value={draft.prefix} onChange={(value) => setField('prefix', value)} options={['', 'นาย', 'นาง', 'นางสาว', 'ดร.']} />
             <EditableKV k="ชื่อ-นามสกุล (TH)" value={draft.nameTh} onChange={(value) => setField('nameTh', value)} />
-            <EditableKV k="ชื่อ-นามสกุล (ENG)" value={draft.nameEn} onChange={(value) => setField('nameEn', value)} />
+            <EditableKV
+              k="ชื่อ-นามสกุล (ENG)"
+              value={draft.nameEn}
+              onChange={(value) => setField('nameEn', value)}
+              error={touched.nameEn ? errors.nameEn : ''}
+              onBlur={() => onTouch('nameEn')}
+            />
             <EditableKV k="ชื่อเล่น (TH)" value={draft.nicknameTh} onChange={(value) => setField('nicknameTh', value)} />
             <EditableKV k="เพศ" value={draft.gender} onChange={(value) => setField('gender', value)} options={['', 'Male', 'Female']} />
             <EditableKV k="วัน/เดือน/ปีเกิด" value={draft.dob} onChange={(value) => setField('dob', value)} type="date" />
@@ -200,7 +215,14 @@ function GeneralTab({ u, editing = false, draft = u, onDraftChange }) {
       <Group title="ช่องทางติดต่อ" columns={3}>
         {editing ? (
           <>
-            <EditableKV k="Email (mail บริษัท)" type="email" value={draft.email} onChange={(value) => setField('email', value)} />
+            <EditableKV
+              k="Email (mail บริษัท)"
+              type="email"
+              value={draft.email}
+              onChange={(value) => setField('email', value)}
+              error={touched.email ? errors.email : ''}
+              onBlur={() => onTouch('email')}
+            />
             <EditableKV k="เบอร์โทรติดต่อ (ไม่มีขีด)" value={draft.phone} onChange={(value) => setField('phone', value)} />
             <EditableKV k="ช่องทางการติดต่อผ่าน line ID" value={draft.line} onChange={(value) => setField('line', value)} />
           </>
@@ -425,6 +447,8 @@ export default function Account({
   const narrow = useNarrow(ref, 760);
   const [active, setActive] = useState(initialTab);
   const [generalDraft, setGeneralDraft] = useState(null);
+  const [touched, setTouched] = useState({});
+  const markTouched = (key) => setTouched((t) => (t[key] ? t : { ...t, [key]: true }));
   const [showPasswordPopup, setShowPasswordPopup] = useState(false);
   const [pwCurrent, setPwCurrent] = useState('');
   const [pwNew, setPwNew] = useState('');
@@ -473,15 +497,28 @@ export default function Account({
   const isEditingGeneral = active === 'general' && Boolean(generalDraft);
 
   const startEditGeneral = () => {
+    setTouched({});
     setGeneralDraft(JSON.parse(JSON.stringify(u)));
   };
 
   const cancelEditGeneral = () => {
     setGeneralDraft(null);
+    setTouched({});
   };
+
+  const generalErrors = {
+    email:  getFieldError('email',  generalDraft?.email),
+    nameEn: getFieldError('nameEn', generalDraft?.nameEn),
+  };
+  const hasGeneralErrors = Object.values(generalErrors).some(Boolean);
+  const canSaveGeneral = isEditingGeneral && !hasGeneralErrors;
 
   const saveEditGeneral = () => {
     if (!generalDraft) return;
+    if (hasGeneralErrors) {
+      setTouched({ email: true, nameEn: true });
+      return;
+    }
     const nextInitial = generalDraft.initial || getInitials(generalDraft.nameTh || user?.name || '');
 
     onUpdateUser?.({
@@ -496,6 +533,7 @@ export default function Account({
       }
     });
     setGeneralDraft(null);
+    setTouched({});
   };
 
   const openPasswordPopup = () => {
@@ -531,6 +569,7 @@ export default function Account({
         job={j}
         active={active}
         isEditingGeneral={isEditingGeneral}
+        canSaveEditGeneral={canSaveGeneral}
         onStartEditGeneral={startEditGeneral}
         onCancelEditGeneral={cancelEditGeneral}
         onSaveEditGeneral={saveEditGeneral}
@@ -545,6 +584,7 @@ export default function Account({
         onChange={(tabId) => {
           setActive(tabId);
           setGeneralDraft(null);
+          setTouched({});
         }}
       />
 
@@ -557,6 +597,9 @@ export default function Account({
         isEditingGeneral={isEditingGeneral}
         generalDraft={generalDraft}
         onDraftChange={setGeneralDraft}
+        generalErrors={generalErrors}
+        generalTouched={touched}
+        onTouchGeneral={markTouched}
         CompanyTab={CompanyTab}
         GeneralTab={GeneralTab}
         JobTab={JobTab}

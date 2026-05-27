@@ -14,6 +14,7 @@ export function AccountHeader({
   job,
   active,
   isEditingGeneral,
+  canSaveEditGeneral = true,
   onStartEditGeneral,
   onCancelEditGeneral,
   onSaveEditGeneral,
@@ -39,7 +40,7 @@ export function AccountHeader({
           isEditingGeneral ? (
             <>
               <button className="up-btn" type="button" onClick={onCancelEditGeneral}>Cancel</button>
-              <button className="up-btn up-btn--primary" type="button" onClick={onSaveEditGeneral}>
+              <button className="up-btn up-btn--primary" type="button" onClick={onSaveEditGeneral} disabled={!canSaveEditGeneral}>
                 <MdSave />
                 Save
               </button>
@@ -98,6 +99,9 @@ export function AccountContent({
   isEditingGeneral,
   generalDraft,
   onDraftChange,
+  generalErrors,
+  generalTouched,
+  onTouchGeneral,
   CompanyTab,
   GeneralTab,
   JobTab,
@@ -114,6 +118,9 @@ export function AccountContent({
             editing={isEditingGeneral}
             draft={generalDraft || accountUser}
             onDraftChange={onDraftChange}
+            errors={generalErrors}
+            touched={generalTouched}
+            onTouch={onTouchGeneral}
           />
         )}
         {active === 'job' && <JobTab j={job} />}
