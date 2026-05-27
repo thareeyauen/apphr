@@ -6,6 +6,22 @@ import {
 import BottomNav from './Components/BottomNav';
 import './Record.css';
 
+// Format a 'YYYY-MM-DD' date key (Bangkok local) as "27 พ.ค. 2569".
+function formatThaiDate(dateKey) {
+  if (!dateKey) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateKey));
+  if (!m) return dateKey;
+  const [, y, mo, d] = m;
+  // Parse as local — month index 0-based
+  const localDate = new Date(Number(y), Number(mo) - 1, Number(d));
+  if (Number.isNaN(localDate.getTime())) return dateKey;
+  return localDate.toLocaleDateString('th-TH', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
 export default function Record({
   records,
   currentUser,
@@ -47,7 +63,7 @@ export default function Record({
                 <h3>{record.location}</h3>
                 <div className="record-meta">
                   <span className="record-status">{record.status || 'Checked in'}</span>
-                  <span><MdCalendarToday /> {record.date}</span>
+                  <span><MdCalendarToday /> {record.date || formatThaiDate(record.dateKey)}</span>
                   <span>
                     <MdAccessTime /> {record.time}
                     {record.checkOutTime ? ` - ${record.checkOutTime}` : ''}

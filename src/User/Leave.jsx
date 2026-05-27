@@ -14,6 +14,8 @@ import {
   annualQuotaForTenure,
   daysBetween,
   parseFlexibleDate,
+  computeEffectiveLeaveDays,
+  summarizeRange,
 } from '../leaveTypes';
 import './Leave.css';
 
@@ -78,6 +80,7 @@ export default function Leave({
   currentUser,
   entitlements,
   requests = [],
+  holidays = [],
   onGoBack,
   onGoHome,
   onGoRecord,
@@ -86,6 +89,18 @@ export default function Leave({
   onOpenCheckIn,
   isCheckInDisabled = false
 }) {
+  const holidaySet = useMemo(
+    () => new Set((holidays || []).map((h) => h.holiday_date || h)),
+    [holidays]
+  );
+  const holidayLookup = useMemo(() => {
+    const m = {};
+    for (const h of holidays || []) {
+      const date = h.holiday_date || h;
+      if (date) m[date] = h.name || '';
+    }
+    return m;
+  }, [holidays]);
   const isExemptFromCheckIn = isCheckInDisabled || currentUser?.profile?.job?.employeeLevel === 'Board Level' || currentUser?.profile?.job?.employeeLevel === 'Director Level';
   const userOwnerKey = currentUser?.employeeId || currentUser?.email || currentUser?.userType || '';
   const today = new Date().toISOString().slice(0, 10);
@@ -144,18 +159,32 @@ export default function Leave({
     return Math.max(quota - (usedDaysByLabel[cfg.label] || 0), 0);
   };
 
-  const requestedDays = useMemo(() => {
-    const dateCount = getDateDiffInclusive(startDate, endDate);
-    if (!dateCount) return 0;
-    if (selectedDayType.id === 'period') return dateCount;
-    return dateCount * selectedDayType.multiplier;
-  }, [startDate, endDate, selectedDayType]);
+  // Breakdown of the chosen date range (used by the preview card and submit logic).
+  const rangeSummary = useMemo(
+    () => summarizeRange(startDate, endDate, holidaySet),
+    [startDate, endDate, holidaySet]
+  );
+
+  // Effective leave days = what actually counts against the quota.
+  // For working-day leave types (annual, personal, sick, etc.) this excludes
+  // weekends + company holidays. For calendar-day types (maternity, paternity,
+  // ordination, unpaid, military) every day counts.
+  const requestedDays = useMemo(
+    () => computeEffectiveLeaveDays(selectedLeave, startDate, endDate, selectedDayType.id, holidaySet),
+    [selectedLeave, startDate, endDate, selectedDayType, holidaySet]
+  );
 
   const remainingAfterRequest = Math.max(getRemainingForType(selectedLeave) - requestedDays, 0);
 
   // Centralized validation — single source of truth for "can submit" + error message.
   const validationError = useMemo(() => {
-    if (requestedDays <= 0) return 'กรุณาเลือกช่วงวันที่และจำนวนวันให้ถูกต้อง';
+    const rangeCount = getDateDiffInclusive(startDate, endDate);
+    if (!rangeCount) return 'กรุณาเลือกช่วงวันที่ให้ถูกต้อง';
+    if (requestedDays <= 0) {
+      return !selectedLeave.countCalendarDays
+        ? `${selectedLeave.labelTh}: ช่วงวันที่เลือกตรงกับวันหยุดทั้งหมด — ไม่สามารถใช้สิทธิลาได้`
+        : 'กรุณาเลือกช่วงวันที่ให้ถูกต้อง';
+    }
     if (!reason.trim()) return 'กรุณาระบุเหตุผลในการลา';
 
     const start = parseFlexibleDate(startDate);
@@ -263,6 +292,7 @@ export default function Leave({
       startDateKey: startDate,
       endDateKey: endDate,
       days: requestedDays,
+      dayTypeId: selectedDayType.id,
       time: timeLabel,
       reason: reason.trim(),
       ...(selectedLeave.id === 'sick' && medicalCertificate ? { medicalCertificate } : {}),
@@ -379,6 +409,41 @@ export default function Leave({
               <output>{requestedDays || 0} วัน</output>
             </label>
           </div>
+
+          {rangeSummary.calendar > 0 && (
+            <div className="leave-range-preview">
+              <div className="leave-range-preview__row">
+                <span>วันในช่วงที่เลือก (ปฏิทิน)</span>
+                <strong>{rangeSummary.calendar} วัน</strong>
+              </div>
+              {!selectedLeave.countCalendarDays && rangeSummary.weekendDates.length > 0 && (
+                <div className="leave-range-preview__row leave-range-preview__row--muted">
+                  <span>หัก เสาร์-อาทิตย์</span>
+                  <strong>−{rangeSummary.weekendDates.length} วัน</strong>
+                </div>
+              )}
+              {!selectedLeave.countCalendarDays && rangeSummary.holidayDates.length > 0 && (
+                <div className="leave-range-preview__row leave-range-preview__row--muted">
+                  <span>หัก วันหยุดบริษัท</span>
+                  <strong>−{rangeSummary.holidayDates.length} วัน</strong>
+                </div>
+              )}
+              {!selectedLeave.countCalendarDays && rangeSummary.holidayDates.length > 0 && (
+                <ul className="leave-range-preview__holidays">
+                  {rangeSummary.holidayDates.map((d) => (
+                    <li key={d}>{formatInputDate(d)} — {holidayLookup[d] || 'วันหยุด'}</li>
+                  ))}
+                </ul>
+              )}
+              <div className="leave-range-preview__row leave-range-preview__row--total">
+                <span>นับเป็นวันลาจริง</span>
+                <strong>{requestedDays} วัน</strong>
+              </div>
+              {selectedLeave.countCalendarDays && (
+                <p className="leave-rule"><MdInfoOutline /> ลาประเภทนี้นับตามปฏิทิน (รวมเสาร์-อาทิตย์และวันหยุดบริษัท)</p>
+              )}
+            </div>
+          )}
         </section>
 
         <section className="leave-card">

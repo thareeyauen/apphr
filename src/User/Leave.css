@@ -333,6 +333,53 @@
   font-family: var(--up-font-thai);
 }
 
+.leave-range-preview {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--up-line-soft);
+  border-radius: 12px;
+  background: var(--up-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.leave-range-preview__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--up-ink);
+}
+
+.leave-range-preview__row--muted {
+  color: var(--up-ink-3);
+}
+
+.leave-range-preview__row--total {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--up-line);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--up-accent-dark);
+}
+
+.leave-range-preview__row--total strong {
+  font-size: 16px;
+}
+
+.leave-range-preview__holidays {
+  margin: 2px 0 4px;
+  padding-left: 18px;
+  list-style: disc;
+  color: var(--up-ink-3);
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 @media (max-width: 900px) {
   .leave-form {
     grid-template-columns: 1fr;

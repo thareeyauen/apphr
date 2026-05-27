@@ -98,6 +98,10 @@ export async function apiGetDocumentRequestTypes() {
 export async function apiGetAttendanceExceptionTypes() {
   return await api('GET', '/lookups/attendance-exception-types');
 }
+export async function apiGetHolidays(year) {
+  const qs = year ? `?year=${year}` : '';
+  return await api('GET', `/lookups/holidays${qs}`);
+}
 
 export async function apiCreateRequest(body) {
   return await api('POST', '/requests', body);

@@ -15,6 +15,7 @@ import {
   apiDeleteRequest,
   apiGetAllUsers,
   apiGetCheckins,
+  apiGetHolidays,
   apiGetMyEntitlement,
   apiGetRequests,
   apiGetSettings,
@@ -83,6 +84,7 @@ function App() {
   const [entitlements, setEntitlements] = useState({})
   const [allEmployees, setAllEmployees] = useState([])
   const [settings, setSettings] = useState(null)
+  const [holidays, setHolidays] = useState([])
 
   // ─── Initial load: restore session via stored token ────────────────────────
   useEffect(() => {
@@ -122,12 +124,14 @@ function App() {
       setEntitlements({})
       setAllEmployees([])
       setSettings(null)
+      setHolidays([])
       return
     }
     refreshRecords()
     apiGetMyEntitlement().then((e) => setEntitlements(e || {})).catch(() => setEntitlements({}))
     apiGetAllUsers().then((list) => setAllEmployees(list || [])).catch(() => setAllEmployees([]))
     apiGetSettings().then((s) => setSettings(s || null)).catch(() => setSettings(null))
+    apiGetHolidays().then((list) => setHolidays(list || [])).catch(() => setHolidays([]))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedInUser?.id])
 
@@ -360,6 +364,7 @@ function App() {
         currentUser={currentUser}
         entitlements={entitlements}
         requests={currentUserRequests}
+        holidays={holidays}
         onGoBack={() => navigate('/request')}
         onGoHome={() => navigate('/home')}
         onGoRecord={() => navigate('/record')}

@@ -51,6 +51,7 @@ export const LEAVE_TYPES = [
     quota: 15,
     advanceDays: 30,
     backdateDays: 0,
+    countCalendarDays: true,
   },
   {
     id: 'unpaid',
@@ -59,6 +60,7 @@ export const LEAVE_TYPES = [
     quota: 30,
     advanceDays: 30,
     backdateDays: 0,
+    countCalendarDays: true,
   },
   {
     id: 'sterilization',
@@ -83,6 +85,7 @@ export const LEAVE_TYPES = [
     quota: 60,
     advanceDays: 30,
     backdateDays: 0,
+    countCalendarDays: true,
   },
   {
     id: 'maternity',
@@ -91,6 +94,7 @@ export const LEAVE_TYPES = [
     quota: 120,
     advanceDays: 30,
     backdateDays: 0,
+    countCalendarDays: true,
   },
   {
     id: 'paternity',
@@ -101,6 +105,7 @@ export const LEAVE_TYPES = [
     backdateDays: 0,
     requiresChildBirthDate: true,
     useWithinDaysFromChildBirth: 90,
+    countCalendarDays: true,
   },
 ];
 
@@ -155,6 +160,76 @@ export function annualQuotaForTenure(tenureYears) {
     (t) => tenureYears >= t.minYears && tenureYears < t.maxYears
   );
   return tier ? tier.days : 0;
+}
+
+export function toDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function countCalendarDaysInRange(startKey, endKey) {
+  const start = parseFlexibleDate(startKey);
+  const end   = parseFlexibleDate(endKey) || start;
+  if (!start || !end || end < start) return 0;
+  return daysBetween(start, end) + 1;
+}
+
+export function countWorkingDaysInRange(startKey, endKey, holidaySet = new Set()) {
+  const start = parseFlexibleDate(startKey);
+  const end   = parseFlexibleDate(endKey) || start;
+  if (!start || !end || end < start) return 0;
+  let count = 0;
+  const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const stop   = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  while (cursor <= stop) {
+    const dow = cursor.getDay();
+    if (dow !== 0 && dow !== 6 && !holidaySet.has(toDateKey(cursor))) count += 1;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
+
+// Returns { calendar, working, holidaysInRange, weekendsInRange } for UI preview.
+export function summarizeRange(startKey, endKey, holidaySet = new Set()) {
+  const start = parseFlexibleDate(startKey);
+  const end   = parseFlexibleDate(endKey) || start;
+  if (!start || !end || end < start) {
+    return { calendar: 0, working: 0, holidayDates: [], weekendDates: [] };
+  }
+  const holidayDates = [];
+  const weekendDates = [];
+  let working = 0;
+  const cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const stop   = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  while (cursor <= stop) {
+    const key = toDateKey(cursor);
+    const dow = cursor.getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const isHoliday = holidaySet.has(key);
+    if (isHoliday) holidayDates.push(key);
+    else if (isWeekend) weekendDates.push(key);
+    else working += 1;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return {
+    calendar: daysBetween(start, end) + 1,
+    working,
+    holidayDates,
+    weekendDates,
+  };
+}
+
+export function computeEffectiveLeaveDays(leaveCfg, startKey, endKey, dayTypeId, holidaySet) {
+  if (leaveCfg.countCalendarDays) {
+    return countCalendarDaysInRange(startKey, endKey);
+  }
+  const working = countWorkingDaysInRange(startKey, endKey, holidaySet || new Set());
+  if (working === 1 && (dayTypeId === 'half-morning' || dayTypeId === 'half-afternoon')) {
+    return 0.5;
+  }
+  return working;
 }
 
 export function quotaForUser(typeId, user, overrides) {
