@@ -351,7 +351,11 @@ export default function Landing({
   };
 
   const formatTime = (date) =>
-    date.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    date.toLocaleTimeString('th-TH', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Bangkok',
+    });
 
   const handleSubmitCheckIn = () => {
     if (shouldBlockCheckInForLeave) {
