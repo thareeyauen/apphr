@@ -156,6 +156,7 @@ export default function Leave({
   const getRemainingForType = (cfg) => {
     const quota = getQuotaForUser(cfg, currentUser, entitlements);
     if (!quota) return 0;
+    if (quota < 0) return quota;
     return Math.max(quota - (usedDaysByLabel[cfg.label] || 0), 0);
   };
 
