@@ -1,6 +1,7 @@
 // API client for apphr-backend.
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:4000';
+const API_BASE = import.meta.env.VITE_API_BASE
+  || (window.location.hostname === 'localhost' ? 'http://localhost:4000' : 'https://apphr-backend.onrender.com');
 const TOKEN_KEY = 'apphr-token';
 
 export function getToken() {

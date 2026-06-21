@@ -135,6 +135,13 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedInUser?.id])
 
+  // Refresh settings each time the user opens the account page so benefits data
+  // is always current even if an admin saved changes after this user logged in.
+  useEffect(() => {
+    if (!signedInUser || path !== '/account') return
+    apiGetSettings().then((s) => setSettings(s || null)).catch(() => {})
+  }, [signedInUser?.id, path])
+
   // ─── Refresh team check-ins on landing page (immediate + every 60s) ──────────
   useEffect(() => {
     if (!signedInUser) return
